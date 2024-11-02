@@ -1,8 +1,10 @@
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
 from entities.template import Template
+from repositories.interfaces.i_template_repository import ITemplateRepository
 
-class TemplateRepository:
+
+class TemplateRepository(ITemplateRepository):
     def __init__(self, db: Database):
         self._collection = db['template']
 
