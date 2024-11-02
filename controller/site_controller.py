@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from pymongo.database import Database
-
+from dto.site.create_url_dto import CreateUrlDto
 from dto.site.site_request_dto import SiteRequestDto
 from dto.site.site_update_request_dto import SiteUpdateRequestDto
 from middleware.auth_middleware import AuthMiddleware
@@ -12,6 +12,8 @@ class SiteController:
         self._site_service = SiteService(db)
         self._auth_middleware = AuthMiddleware()
 
+        app.add_url_rule('/site/create-url', "create_url", self._auth_middleware.token_required(self.create_url),
+                         methods=['POST'])
         app.add_url_rule("/site", "get_sites", self._auth_middleware.token_required(self.get_sites), methods=['GET'])
         app.add_url_rule("/site", "create_site", self._auth_middleware.token_required(self.create_site),
                          methods=['POST'])
@@ -19,6 +21,86 @@ class SiteController:
                          methods=['PUT'])
         app.add_url_rule("/site/<string:guid>", "delete_site", self._auth_middleware.token_required(self.delete_site),
                          methods=['DELETE'])
+
+    def create_url(self):
+        """
+            Create URL Site
+            ---
+            tags: ['Site']
+            parameters:
+              - name: CreateUrlDto
+                in: body
+                required: true
+                schema:
+                  id: CreateUrlDto
+                  properties:
+                    site_url:
+                      type: string
+                      description: Site Guid
+                    space_rule:
+                      type: string
+                      description: Space rule
+                    url_pattern:
+                      type: array
+                      description: List of URL Pattern
+                      items:
+                        type: object
+                        properties:
+                          identifier:
+                            type: string
+                            description: Endpoint Identifier
+                          form_id:
+                            type: string
+                            nullable: True
+                            description: Form Identifier
+                          form_type:
+                            type: integer
+                            nullable: True
+                            description: Form Type
+                          selection:
+                            type: array
+                            description: Selection Value
+                            nullable: True
+                            items:
+                              type: object
+                              properties:
+                                  key:
+                                    type: string
+                                    description: Key selection
+                                  value:
+                                    type: string
+                                    nullable: True
+                                    description: Value selection
+            responses:
+                200:
+                    description: URL Created
+                400:
+                    description: Invalid request
+                500:
+                    description: Internal server error
+        """
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Invalid request payload'
+                }), 400
+
+            request_dto = CreateUrlDto(**data)
+            result = self._site_service.create_url(request_dto)
+
+            return jsonify({
+                'status': 200,
+                'message': 'URL generated',
+                'data': result
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
 
     def get_sites(self):
         """
@@ -66,7 +148,7 @@ class SiteController:
                 'message': 'Site get successfully',
                 'data': response.data,
                 'pagination': vars(response.pagination)
-            })
+            }), 200
 
         except Exception as e:
             return jsonify({
@@ -100,25 +182,41 @@ class SiteController:
                     site_url:
                       type: string
                       description: Site URL
+                    space_rule:
+                      type: string
+                      description: Space rule
+                      nullable: True
                     url_pattern:
                       type: array
                       description: List of URL Pattern
                       items:
                         type: object
                         properties:
-                          key:
+                          identifier:
                             type: string
                             description: Endpoint Identifier
-                          value:
+                          form_id:
                             type: string
-                            description: Endpoint Value
+                            nullable: True
+                            description: Form Identifier
+                          form_type:
+                            type: integer
+                            nullable: True
+                            description: Form Type
                           selection:
                             type: array
                             description: Selection Value
                             nullable: True
                             items:
-                              type: string
-                              description: List selection items
+                              type: object
+                              properties:
+                                  key:
+                                    type: string
+                                    description: Key selection
+                                  value:
+                                    type: string
+                                    nullable: True
+                                    description: Value selection
                     data_url_pattern:
                       type: array
                       description: List of Data URL Pattern
@@ -126,12 +224,13 @@ class SiteController:
                       items:
                         type: object
                         properties:
-                          key:
+                          identifier:
                             type: string
                             description: Endpoint Identifier
                           value:
                             type: string
                             description: Endpoint Value
+                            nullable: True
             responses:
                 200:
                     description: Site created successfully
@@ -142,7 +241,6 @@ class SiteController:
         """
         try:
             data = request.get_json()
-            print(data)
             if not data:
                 return jsonify({
                     'status': 400,
@@ -172,15 +270,15 @@ class SiteController:
 
     def update_site(self):
         """
-            Create a new Site
+            Update Site
             ---
             tags: ['Site']
             parameters:
-              - name: SiteRequestDto
+              - name: SiteUpdateRequestDto
                 in: body
                 required: true
                 schema:
-                  id: SiteRequestDto
+                  id: SiteUpdateRequestDto
                   properties:
                     guid:
                       type: string
@@ -196,25 +294,41 @@ class SiteController:
                     site_url:
                       type: string
                       description: Site URL
+                    space_rule:
+                      type: string
+                      description: Space rule
+                      nullable: True
                     url_pattern:
                       type: array
                       description: List of URL Pattern
                       items:
                         type: object
                         properties:
-                          key:
+                          identifier:
                             type: string
                             description: Endpoint Identifier
-                          value:
+                          form_id:
                             type: string
-                            description: Endpoint Value
+                            nullable: True
+                            description: Form Identifier
+                          form_type:
+                            type: integer
+                            nullable: True
+                            description: Form Type
                           selection:
                             type: array
                             description: Selection Value
                             nullable: True
                             items:
-                              type: string
-                              description: List selection items
+                              type: object
+                              properties:
+                                  key:
+                                    type: string
+                                    description: Key selection
+                                  value:
+                                    type: string
+                                    nullable: True
+                                    description: Value selection
                     data_url_pattern:
                       type: array
                       description: List of Data URL Pattern
@@ -222,18 +336,19 @@ class SiteController:
                       items:
                         type: object
                         properties:
-                          key:
+                          identifier:
                             type: string
                             description: Endpoint Identifier
                           value:
                             type: string
                             description: Endpoint Value
+                            nullable: True
             responses:
                 200:
                     description: Site created successfully
                 400:
                     description: Bad request (invalid JSON or missing fields)
-                400:
+                404:
                     description: Data not found
                 500:
                     description: Internal server error

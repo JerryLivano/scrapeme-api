@@ -16,6 +16,7 @@ class SiteRepository:
                 site['categories_guid'],
                 site['site_name'],
                 site['site_url'],
+                site['space_rule'],
                 site['url_pattern'],
                 site['data_url_pattern'],
                 site['created_date']
@@ -34,6 +35,7 @@ class SiteRepository:
                 site['categories_guid'],
                 site['site_name'],
                 site['site_url'],
+                site['space_rule'],
                 site['url_pattern'],
                 site['data_url_pattern'],
                 site['created_date']

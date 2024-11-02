@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
+from dto.site.create_url_dto import CreateUrlDto
 from dto.site.site_request_dto import SiteRequestDto
-from dto.site.site_response_dto import SiteResponseDto
 from dto.site.site_update_request_dto import SiteUpdateRequestDto
 from entities.site import Site
 from handlers.pagination.pagination_handler import PaginationHandler
@@ -16,31 +16,27 @@ class SiteService:
         self._site_repository = SiteRepository(db)
         self._category_repository = CategoryRepository(db)
 
+    def create_url(self, request: CreateUrlDto) -> str | None:
+        try:
+            result = (request.site_url + ("".join([f"{str(item['identifier'])}{f"{str(item.get('form_id')).replace(" ", request.space_rule)}" if item.get('form_id') else ""}" for item in request.url_pattern]))) if request.url_pattern else None
+            return result
+        except:
+            return None
+
     def get_all(self, search: str, page: int, limit: int, order_by: int, column_name: str) -> ResponsePaginationHandler | None:
         try:
             sites = self._site_repository.get_all()
 
-            result = [SiteResponseDto(
-                site['guid'],
-                site['admin_guid'],
-                [self._category_repository.get_by_guid(item) for item in site['categories_guid']],
-                site['site_name'],
-                site['site_url'],
-                "".join([f"{item['key']}{item['value']}" for item in site['url_pattern']]),
-                "".join([f"{item['key']}{item['value']}" for item in site['data_url_pattern']]),
-                site['created_date']
-            ) for site in sites]
-
-            result = [data for data in result if search.lower() in data.site_name.lower()]
+            sites = [data for data in sites if search.lower() in data.site_name.lower()]
 
             if order_by != 0 and column_name:
                 if int(order_by) == 1:
-                    result.sort(key=lambda x: getattr(x, column_name))
+                    sites.sort(key=lambda x: getattr(x, column_name))
                 elif int(order_by) == 2:
-                    result.sort(key=lambda x: getattr(x, column_name), reverse=True)
+                    sites.sort(key=lambda x: getattr(x, column_name), reverse=True)
 
             return PaginationHandler.paginate(
-                queryable=result,
+                queryable=sites,
                 transform_function=lambda site, index: site.__dict__,
                 page=page,
                 limit=limit
@@ -50,16 +46,18 @@ class SiteService:
 
     def create_site(self, request: SiteRequestDto) -> Site | None:
         try:
-            new_site = Site(
+            new_site: Site = Site(
                 guid=str(uuid4()),
                 admin_guid=request.admin_guid,
                 categories_guid=request.categories_guid,
                 site_name=request.site_name,
                 site_url=request.site_url,
+                space_rule=request.space_rule,
                 url_pattern=request.url_pattern,
                 data_url_pattern=request.data_url_pattern,
                 created_date=datetime.utcnow() + timedelta(hours=7)
             )
+            print(new_site.created_date)
             result = self._site_repository.create(new_site)
             if not result:
                 return None
@@ -78,6 +76,7 @@ class SiteService:
                 request.categories_guid,
                 request.site_name,
                 request.site_url,
+                request.space_rule,
                 request.url_pattern,
                 request.data_url_pattern,
                 site.created_date
