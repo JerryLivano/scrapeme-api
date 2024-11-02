@@ -1,8 +1,10 @@
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
 from entities.site import Site
+from repositories.interfaces.i_site_repository import ISiteRepository
 
-class SiteRepository:
+
+class SiteRepository(ISiteRepository):
     def __init__(self, db: Database):
         self._collection = db['site']
         self._scrape_data_collection = db['scrape_data']

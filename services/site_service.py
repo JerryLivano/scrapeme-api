@@ -10,8 +10,10 @@ from handlers.pagination.pagination_handler import PaginationHandler
 from handlers.pagination.response_pagination_handler import ResponsePaginationHandler
 from repositories.category_repository import CategoryRepository
 from repositories.site_repository import SiteRepository
+from services.interfaces.i_site_service import ISiteService
 
-class SiteService:
+
+class SiteService(ISiteService):
     def __init__(self, db: Database):
         self._site_repository = SiteRepository(db)
         self._category_repository = CategoryRepository(db)
