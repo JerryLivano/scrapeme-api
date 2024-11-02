@@ -10,6 +10,7 @@ from handlers.pagination.pagination_handler import PaginationHandler
 from handlers.pagination.response_pagination_handler import ResponsePaginationHandler
 from repositories.category_repository import CategoryRepository
 from repositories.site_repository import SiteRepository
+from repositories.template_repository import TemplateRepository
 from services.interfaces.i_site_service import ISiteService
 
 
@@ -17,6 +18,7 @@ class SiteService(ISiteService):
     def __init__(self, db: Database):
         self._site_repository = SiteRepository(db)
         self._category_repository = CategoryRepository(db)
+        self._template_repository = TemplateRepository(db)
 
     def create_url(self, request: CreateUrlDto) -> str | None:
         try:
@@ -92,14 +94,14 @@ class SiteService(ISiteService):
 
     def delete_site(self, guid: str) -> int:
         try:
-            # template = self._template_repository.get_by_guid(guid)
-            # if not template:
-            #     return -2
+            template = self._template_repository.get_by_site_guid(guid)
+            if not template:
+                return -2
 
-            # delete_template = self._template_repository.delete(guid)
+            delete_template = self._template_repository.delete(guid)
             delete_site = self._site_repository.delete(guid)
 
-            if not delete_site:
+            if not delete_site or not delete_template:
                 return 0
             return 1
         except PyMongoError:
