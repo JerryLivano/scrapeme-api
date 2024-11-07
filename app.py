@@ -6,6 +6,7 @@ from controller.role_controller import RoleController
 from controller.scrap_controller import ScrapController
 from controller.site_controller import SiteController
 from controller.site_request_controller import SiteRequestController
+from controller.template_controller import TemplateController
 from db_context.mongo_db_connection import MongoDBConnection
 from middleware.cors_middleware import CorsMiddleware
 
@@ -46,9 +47,10 @@ with app.app_context():
     scrap_controller = ScrapController(app)
     role_controller = RoleController(app, db)
     account_controller = AccountController(app, db)
-    category_controller = CategoryController(app, db)
+    # category_controller = CategoryController(app, db)
     site_request_controller = SiteRequestController(app, db)
     site_controller = SiteController(app, db)
+    template_controller = TemplateController(app, db)
 
 @app.route('/')
 def index():

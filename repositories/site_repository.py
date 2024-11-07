@@ -15,10 +15,10 @@ class SiteRepository(ISiteRepository):
             return [Site(
                 site['guid'],
                 site['admin_guid'],
-                site['categories_guid'],
                 site['site_name'],
                 site['site_url'],
                 site['space_rule'],
+                site['is_active'],
                 site['url_pattern'],
                 site['data_url_pattern'],
                 site['created_date']
@@ -34,10 +34,10 @@ class SiteRepository(ISiteRepository):
             return Site(
                 site['guid'],
                 site['admin_guid'],
-                site['categories_guid'],
                 site['site_name'],
                 site['site_url'],
                 site['space_rule'],
+                site['is_active'],
                 site['url_pattern'],
                 site['data_url_pattern'],
                 site['created_date']

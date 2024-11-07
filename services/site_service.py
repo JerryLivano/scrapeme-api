@@ -24,7 +24,7 @@ class SiteService(ISiteService):
         try:
             result = (request.site_url + ("".join([f"{str(item['identifier'])}{f"{str(item.get('form_id')).replace(" ", request.space_rule)}" if item.get('form_id') else ""}" for item in request.url_pattern]))) if request.url_pattern else None
             return result
-        except:
+        except ValueError:
             return None
 
     def get_all(self, search: str, page: int, limit: int, order_by: int, column_name: str) -> ResponsePaginationHandler | None:
@@ -53,10 +53,10 @@ class SiteService(ISiteService):
             new_site: Site = Site(
                 guid=str(uuid4()),
                 admin_guid=request.admin_guid,
-                categories_guid=request.categories_guid,
                 site_name=request.site_name,
                 site_url=request.site_url,
                 space_rule=request.space_rule,
+                is_active=False,
                 url_pattern=request.url_pattern,
                 data_url_pattern=request.data_url_pattern,
                 created_date=datetime.utcnow() + timedelta(hours=7)
@@ -77,10 +77,10 @@ class SiteService(ISiteService):
             new_site = Site(
                 request.guid,
                 site.admin_guid,
-                request.categories_guid,
                 request.site_name,
                 request.site_url,
                 request.space_rule,
+                request.is_active,
                 request.url_pattern,
                 request.data_url_pattern,
                 site.created_date

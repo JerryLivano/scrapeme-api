@@ -13,6 +13,10 @@ class TemplateRepository(ITemplateRepository):
             templates = self._collection.find()
             return [Template(
                 template['guid'],
+                template['container'],
+                template['is_class'],
+                template['is_id'],
+                template['is_tag'],
                 template['site_guid'],
                 template['tag_data']
             ) for template in templates]
@@ -26,6 +30,10 @@ class TemplateRepository(ITemplateRepository):
                 return None
             return Template(
                 template['guid'],
+                template['container'],
+                template['is_class'],
+                template['is_id'],
+                template['is_tag'],
                 template['site_guid'],
                 template['tag_data']
             )
@@ -39,6 +47,10 @@ class TemplateRepository(ITemplateRepository):
                 return None
             return Template(
                 template['guid'],
+                template['container'],
+                template['is_class'],
+                template['is_id'],
+                template['is_tag'],
                 template['site_guid'],
                 template['tag_data']
             )
