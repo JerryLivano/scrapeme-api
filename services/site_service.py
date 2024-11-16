@@ -3,6 +3,7 @@ from uuid import uuid4
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
 from dto.site.create_url_dto import CreateUrlDto
+from dto.site.site_active_update_dto import SiteUpdateActiveDto
 from dto.site.site_request_dto import SiteRequestDto
 from dto.site.site_update_request_dto import SiteUpdateRequestDto
 from entities.site import Site
@@ -80,7 +81,7 @@ class SiteService(ISiteService):
                 request.site_name,
                 request.site_url,
                 request.space_rule,
-                request.is_active,
+                site.is_active,
                 request.url_pattern,
                 request.data_url_pattern,
                 site.created_date
@@ -92,16 +93,28 @@ class SiteService(ISiteService):
         except PyMongoError:
             return -1
 
+    def update_active_site(self, request: SiteUpdateActiveDto) -> int:
+        try:
+            site = self._site_repository.get_by_guid(request.guid)
+            if not site:
+                return -2
+            result = self._site_repository.update_active(request.guid, request.is_active)
+            if not result:
+                return 0
+            return 1
+        except PyMongoError:
+            return -1
+
     def delete_site(self, guid: str) -> int:
         try:
-            template = self._template_repository.get_by_site_guid(guid)
-            if not template:
-                return -2
+            # template = self._template_repository.get_by_site_guid(guid)
+            # if not template:
+            #     return -2
 
-            delete_template = self._template_repository.delete(guid)
+            # delete_template = self._template_repository.delete(guid)
             delete_site = self._site_repository.delete(guid)
 
-            if not delete_site or not delete_template:
+            if not delete_site:
                 return 0
             return 1
         except PyMongoError:

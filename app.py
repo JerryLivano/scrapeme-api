@@ -2,6 +2,7 @@ from flask import Flask, redirect
 from flasgger import Swagger
 from controller.account_controller import AccountController
 from controller.category_controller import CategoryController
+from controller.dashboard_controller import DashboardController
 from controller.role_controller import RoleController
 from controller.scrap_controller import ScrapController
 from controller.site_controller import SiteController
@@ -44,13 +45,14 @@ db = mongo_connection.get_database()
 
 # Controller registered
 with app.app_context():
-    scrap_controller = ScrapController(app)
-    role_controller = RoleController(app, db)
-    account_controller = AccountController(app, db)
-    # category_controller = CategoryController(app, db)
-    site_request_controller = SiteRequestController(app, db)
-    site_controller = SiteController(app, db)
-    template_controller = TemplateController(app, db)
+    ScrapController(app)
+    RoleController(app, db)
+    AccountController(app, db)
+    # CategoryController(app, db)
+    SiteRequestController(app, db)
+    SiteController(app, db)
+    TemplateController(app, db)
+    DashboardController(app, db)
 
 @app.route('/')
 def index():

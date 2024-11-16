@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from pymongo.database import Database
 from dto.site.create_url_dto import CreateUrlDto
+from dto.site.site_active_update_dto import SiteUpdateActiveDto
 from dto.site.site_request_dto import SiteRequestDto
 from dto.site.site_update_request_dto import SiteUpdateRequestDto
 from middleware.auth_middleware import AuthMiddleware
@@ -18,6 +19,8 @@ class SiteController:
         app.add_url_rule("/site", "create_site", self._auth_middleware.token_required(self.create_site),
                          methods=['POST'])
         app.add_url_rule("/site", "update_site", self._auth_middleware.token_required(self.update_site),
+                         methods=['PUT'])
+        app.add_url_rule("/site/active-status", "update_active_site", self._auth_middleware.token_required(self.update_active_site),
                          methods=['PUT'])
         app.add_url_rule("/site/<string:guid>", "delete_site", self._auth_middleware.token_required(self.delete_site),
                          methods=['DELETE'])
@@ -171,11 +174,6 @@ class SiteController:
                     admin_guid:
                       type: string
                       description: Admin Guid
-                    categories_guid:
-                      type: array
-                      items:
-                        type: string
-                      description: Categories Guid
                     site_name:
                       type: string
                       description: Site Name
@@ -366,6 +364,68 @@ class SiteController:
 
             response = self._site_service.update_site(request_dto)
 
+            if response == -2:
+                return jsonify({
+                    'status': 404,
+                    'message': 'Site not found'
+                }), 404
+            elif response == 0:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Failed to update'
+                }), 400
+            elif response == -1:
+                return jsonify({
+                    'status': 500,
+                    'message': 'Internal Server Error'
+                }), 500
+            return jsonify({
+                'status': 200,
+                'message': 'Site successfully updated'
+            }), 200
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def update_active_site(self):
+        """
+            Update Active Site
+            ---
+            tags: ['Site']
+            parameters:
+              - name: SiteActiveUpdateDto
+                in: body
+                required: true
+                schema:
+                  id: SiteActiveUpdateDto
+                  properties:
+                    guid:
+                      type: string
+                      description: Site Guid
+                    is_active:
+                      type: boolean
+                      description: Active Status
+            responses:
+                200:
+                    description: Site updated successfully
+                400:
+                    description: Bad request (invalid JSON or missing fields)
+                404:
+                    description: Data not found
+                500:
+                    description: Internal server error
+        """
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Invalid request payload'
+                }), 400
+            request_dto = SiteUpdateActiveDto(**data)
+            response = self._site_service.update_active_site(request_dto)
             if response == -2:
                 return jsonify({
                     'status': 404,

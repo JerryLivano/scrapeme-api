@@ -26,6 +26,12 @@ class SiteRepository(ISiteRepository):
         except PyMongoError:
             return None
 
+    def get_count(self) -> int:
+        try:
+            return self._collection.count_documents({})
+        except PyMongoError:
+            return 0
+
     def get_by_guid(self, guid: str) -> Site | None:
         try:
             site = self._collection.find_one({"guid": guid})
@@ -59,6 +65,18 @@ class SiteRepository(ISiteRepository):
             result = self._collection.update_one(
                 {"guid": site.guid},
                 {"$set": site.to_dict()}
+            )
+            if not result:
+                return False
+            return True
+        except PyMongoError:
+            return False
+
+    def update_active(self, guid: str, is_active: bool) -> bool:
+        try:
+            result = self._collection.update_one(
+                {"guid": guid},
+                {"$set": {"is_active": is_active}}
             )
             if not result:
                 return False

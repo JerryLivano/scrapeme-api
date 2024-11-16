@@ -26,6 +26,12 @@ class AccountRepository(IAccountRepository):
         except PyMongoError:
             return None
 
+    def get_count(self) -> int:
+        try:
+            return self._collection.count_documents({})
+        except PyMongoError:
+            return 0
+
     def get_by_guid(self, guid: str) -> Account | None:
         try:
             result = self._collection.find_one({"guid": guid})

@@ -2,6 +2,7 @@ from functools import wraps
 from flask import request, jsonify
 from handlers.jwt_handler import JWTHandler
 
+
 class AuthMiddleware:
     def __init__(self):
         self._jwt_handler = JWTHandler()
@@ -12,7 +13,8 @@ class AuthMiddleware:
             token = None
 
             if 'Authorization' in request.headers:
-                token = request.headers['Authorization']
+                token = request.headers['Authorization'].split(" ")[1] if len(
+                    request.headers['Authorization'].split(" ")) == 2 else request.headers['Authorization']
 
             if not token:
                 return jsonify({

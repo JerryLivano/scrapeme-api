@@ -7,6 +7,10 @@ class ISiteRequestRepository(ABC):
         pass
 
     @abstractmethod
+    def get_count(self) -> int:
+        pass
+
+    @abstractmethod
     def get_by_guid(self, guid: str) -> SiteRequest | None:
         pass
 

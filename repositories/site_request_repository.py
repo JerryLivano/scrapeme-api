@@ -24,6 +24,12 @@ class SiteRequestRepository(ISiteRequestRepository):
         except PyMongoError:
             return None
 
+    def get_count(self) -> int:
+        try:
+            return self._collection.count_documents({"status": None})
+        except PyMongoError:
+            return 0
+
     def get_by_guid(self, guid: str) -> SiteRequest | None:
         try:
             request = self._collection.find_one({'guid': guid})
