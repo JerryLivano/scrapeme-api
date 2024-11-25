@@ -12,7 +12,7 @@ class ISiteService(ABC):
         pass
 
     @abstractmethod
-    def get_all(self, search: str, page: int, limit: int, order_by: int, column_name: str) -> ResponsePaginationHandler | None:
+    def get_all(self, search: str, page: int, limit: int, order_by: int, column_name: str, status: bool | None) -> ResponsePaginationHandler | None:
         pass
 
     @abstractmethod

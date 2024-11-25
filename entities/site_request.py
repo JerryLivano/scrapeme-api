@@ -2,7 +2,7 @@ from datetime import datetime
 
 class SiteRequest:
     def __init__(self, guid: str, account_guid: str, subject: str, site_url: str, description: str,
-                 status: bool | None, decline_reason: str | None, created_date: datetime, updated_date: datetime | None):
+                 status: int, decline_reason: str | None, created_date: datetime, updated_date: datetime | None):
         self.guid = guid
         self.account_guid = account_guid
         self.subject = subject

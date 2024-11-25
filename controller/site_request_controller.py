@@ -6,6 +6,7 @@ from dto.site_request.site_request_update_request_dto import SiteRequestUpdateRe
 from middleware.auth_middleware import AuthMiddleware
 from services.site_request_service import SiteRequestService
 
+
 class SiteRequestController:
     def __init__(self, app: Flask, db: Database):
         self._site_request_service = SiteRequestService(db)
@@ -23,10 +24,12 @@ class SiteRequestController:
                          methods=["PUT"])
         app.add_url_rule("/request/<string:guid>", "delete_request",
                          self._auth_middleware.token_required(self.delete_request), methods=["DELETE"])
+        app.add_url_rule("/request/done/<string:guid>", "done_request",
+                         self._auth_middleware.token_required(self.done_request), methods=["PUT"])
         app.add_url_rule("/request/accept/<string:guid>", "accept_request",
                          self._auth_middleware.token_required(self.accept_request), methods=["PUT"])
         app.add_url_rule("/request/decline", "decline_request",
-                         self._auth_middleware.token_required(self.delete_request), methods=["PUT"])
+                         self._auth_middleware.token_required(self.decline_request), methods=["PUT"])
 
     def get_requests(self):
         """
@@ -359,6 +362,41 @@ class SiteRequestController:
                 'message': f'Error occurred: {str(e)}'
             }), 500
 
+    def done_request(self, guid: str):
+        """
+            Done Site Request
+            ---
+            tags: ['Site Request']
+            parameters:
+              - name: guid
+                in: path
+                required: true
+                type: string
+                description: GUID of the site request to retrieve
+            responses:
+                200:
+                    description: Site Request deleted successfully
+                500:
+                    description: Internal server error
+        """
+        try:
+            response = self._site_request_service.done(guid)
+            if response:
+                return jsonify({
+                    'status': 200,
+                    'message': 'Site Request successfully updated'
+                }), 200
+            else:
+                return jsonify({
+                    'status': 500,
+                    'message': 'Failed to update data'
+                }), 500
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
     def accept_request(self, guid: str):
         """
         Accept Site Request by GUID
@@ -440,7 +478,6 @@ class SiteRequestController:
         """
         try:
             data = request.get_json()
-
             if not data:
                 return jsonify({
                     'status': 400,
@@ -448,7 +485,6 @@ class SiteRequestController:
                 }), 400
 
             request_dto = SiteRequestDeclineDto(**data)
-
             response = self._site_request_service.decline(request_dto)
 
             if response == -2:

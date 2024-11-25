@@ -70,6 +70,18 @@ class SiteRequestRepository(ISiteRequestRepository):
         except PyMongoError:
             return False
 
+    def done_status(self, guid: str) -> bool:
+        try:
+            result = self._collection.update_one(
+                {"guid": guid},
+                {"$set": {"status": 2}}
+            )
+            if not result:
+                return False
+            return True
+        except PyMongoError:
+            return False
+
     def delete(self, guid: str) -> bool:
         try:
             result = self._collection.delete_one({"guid": guid})

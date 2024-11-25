@@ -36,3 +36,28 @@ class DashboardController:
                 'status': 500,
                 'message': f'Error occurred: {str(e)}'
             }), 500
+
+    def get_top_scraper(self):
+        """
+            Get Top Scraper
+            ---
+            tags: ['Dashboard']
+            responses:
+                200:
+                    description: List of all count
+                500:
+                    description: Internal server error
+        """
+        try:
+            response = self._dashboard_service.get_dashboard_count()
+            return jsonify({
+                'status': 200,
+                'message': 'Categories get successfully',
+                'data': response.__dict__
+            })
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500

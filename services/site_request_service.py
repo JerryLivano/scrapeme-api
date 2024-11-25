@@ -21,13 +21,16 @@ class SiteRequestService(ISiteRequestService):
             requests = self._request_repository.get_all()
 
             requests = [request for request in requests if
-                        ((search.lower() in request.subject.lower()) or (search.lower() in request.site_name.lower()))]
+                        ((search.lower() in request.subject.lower()) or (search.lower() in request.site_url.lower()))]
 
-            if order_by != 0 and column_name:
+            if column_name:
                 if int(order_by) == 1:
                     requests.sort(key=lambda x: getattr(x, column_name))
                 elif int(order_by) == 2:
                     requests.sort(key=lambda x: getattr(x, column_name), reverse=True)
+
+            if int(order_by) == 0:
+                requests.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
 
             return PaginationHandler.paginate(
                 queryable=requests,
@@ -48,11 +51,14 @@ class SiteRequestService(ISiteRequestService):
             requests = [request for request in requests if
                         ((search.lower() in request.subject.lower()) or (search.lower() in request.site_name.lower()))]
 
-            if order_by != 0 and column_name:
+            if column_name:
                 if int(order_by) == 1:
                     requests.sort(key=lambda x: getattr(x, column_name))
                 elif int(order_by) == 2:
                     requests.sort(key=lambda x: getattr(x, column_name), reverse=True)
+
+            if int(order_by) == 0:
+                requests.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
 
             return PaginationHandler.paginate(
                 queryable=requests,
@@ -80,7 +86,7 @@ class SiteRequestService(ISiteRequestService):
                 request.subject,
                 request.site_url,
                 request.description,
-                None,
+                0,
                 None,
                 datetime.utcnow() + timedelta(hours=7),
                 None
@@ -115,6 +121,15 @@ class SiteRequestService(ISiteRequestService):
         except PyMongoError:
             return -1
 
+    def done(self, guid: str) -> bool:
+        try:
+            result = self._request_repository.done_status(guid)
+            if not result:
+                return False
+            return True
+        except PyMongoError:
+            return False
+
     def accept(self, guid: str) -> int:
         try:
             request = self._request_repository.get_by_guid(guid)
@@ -126,7 +141,7 @@ class SiteRequestService(ISiteRequestService):
                 request.subject,
                 request.site_url,
                 request.description,
-                True,
+                1,
                 request.decline_reason,
                 request.created_date,
                 datetime.utcnow() + timedelta(hours=7)
@@ -149,7 +164,7 @@ class SiteRequestService(ISiteRequestService):
                 request.subject,
                 request.site_url,
                 request.description,
-                False,
+                -1,
                 decline_request.decline_reason,
                 request.created_date,
                 datetime.utcnow() + timedelta(hours=7)

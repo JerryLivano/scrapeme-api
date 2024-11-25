@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from pymongo.database import Database
-from dto.site.create_url_dto import CreateUrlDto
 from dto.site.site_active_update_dto import SiteUpdateActiveDto
 from dto.site.site_request_dto import SiteRequestDto
 from dto.site.site_update_request_dto import SiteUpdateRequestDto
@@ -13,8 +12,8 @@ class SiteController:
         self._site_service = SiteService(db)
         self._auth_middleware = AuthMiddleware()
 
-        app.add_url_rule('/site/create-url', "create_url", self._auth_middleware.token_required(self.create_url),
-                         methods=['POST'])
+        app.add_url_rule('/site/create-url/<string:guid>', "create_url", self._auth_middleware.token_required(self.create_url),
+                         methods=['GET'])
         app.add_url_rule("/site", "get_sites", self._auth_middleware.token_required(self.get_sites), methods=['GET'])
         app.add_url_rule("/site", "create_site", self._auth_middleware.token_required(self.create_site),
                          methods=['POST'])
@@ -25,78 +24,38 @@ class SiteController:
         app.add_url_rule("/site/<string:guid>", "delete_site", self._auth_middleware.token_required(self.delete_site),
                          methods=['DELETE'])
 
-    def create_url(self):
+    def create_url(self, guid: str):
         """
             Create URL Site
             ---
             tags: ['Site']
             parameters:
-              - name: CreateUrlDto
-                in: body
+              - name: guid
+                in: path
                 required: true
-                schema:
-                  id: CreateUrlDto
-                  properties:
-                    site_url:
-                      type: string
-                      description: Site Guid
-                    space_rule:
-                      type: string
-                      description: Space rule
-                    url_pattern:
-                      type: array
-                      description: List of URL Pattern
-                      items:
-                        type: object
-                        properties:
-                          identifier:
-                            type: string
-                            description: Endpoint Identifier
-                          form_id:
-                            type: string
-                            nullable: True
-                            description: Form Identifier
-                          form_type:
-                            type: integer
-                            nullable: True
-                            description: Form Type
-                          selection:
-                            type: array
-                            description: Selection Value
-                            nullable: True
-                            items:
-                              type: object
-                              properties:
-                                  key:
-                                    type: string
-                                    description: Key selection
-                                  value:
-                                    type: string
-                                    nullable: True
-                                    description: Value selection
+                type: string
+                description: GUID of the data to retrieve
             responses:
                 200:
                     description: URL Created
-                400:
-                    description: Invalid request
+                404:
+                    description: Data not found
                 500:
                     description: Internal server error
         """
         try:
-            data = request.get_json()
-            if not data:
-                return jsonify({
-                    'status': 400,
-                    'message': 'Invalid request payload'
-                }), 400
+            result = self._site_service.create_url(guid)
 
-            request_dto = CreateUrlDto(**data)
-            result = self._site_service.create_url(request_dto)
+            if not result:
+                return jsonify({
+                    'status': 404,
+                    'message': 'Site not found'
+                }), 404
 
             return jsonify({
                 'status': 200,
                 'message': 'URL generated',
-                'data': result
+                'data': result.__dict__
             }), 200
 
         except Exception as e:
@@ -131,6 +90,10 @@ class SiteController:
                 in: query
                 type: string
                 description: Column name query
+              - name: status
+                in: query
+                type: boolean
+                description: Status site
             responses:
                 200:
                     description: List of all data
@@ -143,8 +106,9 @@ class SiteController:
             search = request.args.get('search', "")
             order_by = request.args.get('order_by', 0)
             column_name = request.args.get('column_name', None)
+            status = request.args.get("status", None)
 
-            response = self._site_service.get_all(search, page, limit, order_by, column_name)
+            response = self._site_service.get_all(search, page, limit, order_by, column_name, status)
 
             return jsonify({
                 'status': 200,
@@ -201,6 +165,10 @@ class SiteController:
                             type: integer
                             nullable: True
                             description: Form Type
+                          is_increment:
+                            type: boolean
+                            nullable: True
+                            description: increment page
                           selection:
                             type: array
                             description: Selection Value
@@ -281,11 +249,6 @@ class SiteController:
                     guid:
                       type: string
                       description: Site Guid
-                    categories_guid:
-                      type: array
-                      items:
-                        type: string
-                      description: Categories Guid
                     site_name:
                       type: string
                       description: Site Name
@@ -313,6 +276,10 @@ class SiteController:
                             type: integer
                             nullable: True
                             description: Form Type
+                          is_increment:
+                            type: boolean
+                            nullable: True
+                            description: increment page
                           selection:
                             type: array
                             description: Selection Value

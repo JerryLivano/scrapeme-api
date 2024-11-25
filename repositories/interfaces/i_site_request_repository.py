@@ -23,5 +23,9 @@ class ISiteRequestRepository(ABC):
         pass
 
     @abstractmethod
+    def done_status(self, guid: str) -> bool:
+        pass
+
+    @abstractmethod
     def delete(self, guid: str) -> bool:
         pass

@@ -21,24 +21,45 @@ class SiteService(ISiteService):
         self._category_repository = CategoryRepository(db)
         self._template_repository = TemplateRepository(db)
 
-    def create_url(self, request: CreateUrlDto) -> str | None:
+    def create_url(self, site_guid: str) -> CreateUrlDto | None:
         try:
-            result = (request.site_url + ("".join([f"{str(item['identifier'])}{f"{str(item.get('form_id')).replace(" ", request.space_rule)}" if item.get('form_id') else ""}" for item in request.url_pattern]))) if request.url_pattern else None
+            site = self._site_repository.get_by_guid(site_guid)
+            if not site:
+                return None
+
+            result = CreateUrlDto(
+                (site.site_url + ("".join([
+                    f"{str(item['identifier'])}{f"{str(item.get('form_id')).replace(" ", site.space_rule)}" if item.get('form_id') else ""}"
+                    for item in site.url_pattern]))) if site.url_pattern else None,
+                (site.site_url + ("".join([
+                    f"{str(item['identifier'])}{f"{str(item.get('form_id')).replace(" ", site.space_rule)}" if item.get('form_id') else ""}"
+                    for item in site.data_url_pattern]))) if site.data_url_pattern else None,
+            )
             return result
         except ValueError:
             return None
 
-    def get_all(self, search: str, page: int, limit: int, order_by: int, column_name: str) -> ResponsePaginationHandler | None:
+    def get_all(self, search: str, page: int, limit: int, order_by: int,
+                column_name: str, status: bool | None) -> ResponsePaginationHandler | None:
         try:
             sites = self._site_repository.get_all()
 
             sites = [data for data in sites if search.lower() in data.site_name.lower()]
 
-            if order_by != 0 and column_name:
+            if status is not None:
+                if status == "true":
+                    sites = list(filter(lambda x: x.is_active == True, sites))
+                else:
+                    sites = list(filter(lambda x: x.is_active == False, sites))
+
+            if column_name:
                 if int(order_by) == 1:
                     sites.sort(key=lambda x: getattr(x, column_name))
                 elif int(order_by) == 2:
                     sites.sort(key=lambda x: getattr(x, column_name), reverse=True)
+
+            if int(order_by) == 0:
+                sites.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
 
             return PaginationHandler.paginate(
                 queryable=sites,

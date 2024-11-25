@@ -53,13 +53,14 @@ class AccountService(IAccountService):
             if role_name:
                 result = list(filter(lambda x: x.role['role_name'].lower() == role_name.lower(), result))
 
-            result.sort(key=lambda x: x.role['role_name'].lower())
-
-            if order_by != 0 and column_name:
+            if column_name:
                 if int(order_by) == 1:
                     result.sort(key=lambda x: x.user[column_name])
                 elif int(order_by) == 2:
                     result.sort(key=lambda x: x.user[column_name], reverse=True)
+
+            if int(order_by) == 0:
+                result.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
 
             return PaginationHandler.paginate(
                 queryable=result,
