@@ -16,12 +16,15 @@ class SiteRequestService(ISiteRequestService):
         self._request_repository = SiteRequestRepository(db)
 
     def get_all(self, search: str, page: int, limit: int, order_by: int,
-                column_name: str) -> ResponsePaginationHandler | None:
+                column_name: str, status: int) -> ResponsePaginationHandler | None:
         try:
             requests = self._request_repository.get_all()
 
             requests = [request for request in requests if
                         ((search.lower() in request.subject.lower()) or (search.lower() in request.site_url.lower()))]
+
+            if int(status) != -2:
+                requests = list(filter(lambda x: x.status == int(status), requests))
 
             if column_name:
                 if int(order_by) == 1:
@@ -42,7 +45,7 @@ class SiteRequestService(ISiteRequestService):
             return None
 
     def get_by_account(self, account: str, search: str, page: int, limit: int, order_by: int,
-                       column_name: str) -> ResponsePaginationHandler | None:
+                       column_name: str, status: int) -> ResponsePaginationHandler | None:
         try:
             requests = self._request_repository.get_all()
 
@@ -50,6 +53,9 @@ class SiteRequestService(ISiteRequestService):
 
             requests = [request for request in requests if
                         ((search.lower() in request.subject.lower()) or (search.lower() in request.site_name.lower()))]
+
+            if int(status) != -2:
+                requests = list(filter(lambda x: x.status == int(status), requests))
 
             if column_name:
                 if int(order_by) == 1:

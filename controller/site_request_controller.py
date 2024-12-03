@@ -57,6 +57,10 @@ class SiteRequestController:
                 in: query
                 type: string
                 description: Column name query
+              - name: status
+                in: query
+                type: integer
+                description: Filter status query
             responses:
                 200:
                     description: List of all data
@@ -69,8 +73,9 @@ class SiteRequestController:
             search = request.args.get('search', "")
             order_by = request.args.get('order_by', 0)
             column_name = request.args.get('column_name', None)
+            status = request.args.get('status', -2)
 
-            response = self._site_request_service.get_all(search, page, limit, order_by, column_name)
+            response = self._site_request_service.get_all(search, page, limit, order_by, column_name, status)
 
             return jsonify({
                 'status': 200,
@@ -116,6 +121,10 @@ class SiteRequestController:
                 in: query
                 type: string
                 description: Column name query
+              - name: status
+                in: query
+                type: integer
+                description: Filter status query
             responses:
                 200:
                     description: List of all data
@@ -128,9 +137,10 @@ class SiteRequestController:
             search = request.args.get('search', "")
             order_by = request.args.get('order_by', 0)
             column_name = request.args.get('column_name', None)
+            status = request.args.get('status', -2)
 
             response = self._site_request_service.get_by_account(account_guid, search, page, limit, order_by,
-                                                                 column_name)
+                                                                 column_name, status)
 
             return jsonify({
                 'status': 200,

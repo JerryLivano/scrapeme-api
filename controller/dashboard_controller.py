@@ -11,6 +11,9 @@ class DashboardController:
 
         app.add_url_rule("/dashboard/count", "get_count", self._auth_middleware.token_required(self.get_count),
                          methods=["GET"])
+        app.add_url_rule("/dashboard/top-scraper", "get_top_scraper",
+                         self._auth_middleware.token_required(self.get_top_scraper),
+                         methods=["GET"])
 
     def get_count(self):
         """
@@ -49,11 +52,11 @@ class DashboardController:
                     description: Internal server error
         """
         try:
-            response = self._dashboard_service.get_dashboard_count()
+            response = self._dashboard_service.get_top_scraper()
             return jsonify({
                 'status': 200,
-                'message': 'Categories get successfully',
-                'data': response.__dict__
+                'message': 'Data get successfully',
+                'data': [data.__dict__ for data in response]
             })
 
         except Exception as e:

@@ -1,10 +1,10 @@
 from flask import Flask, redirect
 from flasgger import Swagger
 from controller.account_controller import AccountController
-from controller.category_controller import CategoryController
 from controller.dashboard_controller import DashboardController
 from controller.role_controller import RoleController
-from controller.scrap_controller import ScrapController
+from controller.parse_html_controller import ParseHTMLController
+from controller.scrape_data_controller import ScrapeDataController
 from controller.site_controller import SiteController
 from controller.site_request_controller import SiteRequestController
 from controller.template_controller import TemplateController
@@ -45,10 +45,10 @@ db = mongo_connection.get_database()
 
 # Controller registered
 with app.app_context():
-    ScrapController(app)
+    ScrapeDataController(app, db)
+    ParseHTMLController(app, db)
     RoleController(app, db)
     AccountController(app, db)
-    # CategoryController(app, db)
     SiteRequestController(app, db)
     SiteController(app, db)
     TemplateController(app, db)

@@ -11,7 +11,7 @@ class IScrapeDataRepository(ABC):
         pass
 
     @abstractmethod
-    def get_all(self) -> list[ScrapeData] | None:
+    def get_by_account(self, account: str) -> list[ScrapeData] | None:
         pass
 
     @abstractmethod

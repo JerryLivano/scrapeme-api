@@ -39,6 +39,15 @@ class SiteService(ISiteService):
         except ValueError:
             return None
 
+    def get_sites(self) -> list[Site] | None:
+        try:
+            sites = self._site_repository.get_all()
+            sites.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
+            return [site.to_dict() for site in sites]
+        except PyMongoError:
+            return None
+
+
     def get_all(self, search: str, page: int, limit: int, order_by: int,
                 column_name: str, status: bool | None) -> ResponsePaginationHandler | None:
         try:
@@ -70,6 +79,16 @@ class SiteService(ISiteService):
         except PyMongoError:
             return None
 
+    def get_active_site(self, search: str) -> list[Site] | None:
+        try:
+            sites = self._site_repository.get_all()
+            sites = list(filter(lambda x: x.is_active == True, sites))
+            sites = [data for data in sites if search.lower() in data.site_name.lower()]
+            sites.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
+            return [site.to_dict() for site in sites]
+        except PyMongoError:
+            return None
+
     def create_site(self, request: SiteRequestDto) -> Site | None:
         try:
             new_site: Site = Site(
@@ -78,12 +97,12 @@ class SiteService(ISiteService):
                 site_name=request.site_name,
                 site_url=request.site_url,
                 space_rule=request.space_rule,
+                limit_data=request.limit_data,
                 is_active=False,
                 url_pattern=request.url_pattern,
                 data_url_pattern=request.data_url_pattern,
                 created_date=datetime.utcnow() + timedelta(hours=7)
             )
-            print(new_site.created_date)
             result = self._site_repository.create(new_site)
             if not result:
                 return None
@@ -102,6 +121,7 @@ class SiteService(ISiteService):
                 request.site_name,
                 request.site_url,
                 request.space_rule,
+                request.limit_data,
                 site.is_active,
                 request.url_pattern,
                 request.data_url_pattern,
@@ -128,11 +148,10 @@ class SiteService(ISiteService):
 
     def delete_site(self, guid: str) -> int:
         try:
-            # template = self._template_repository.get_by_site_guid(guid)
-            # if not template:
-            #     return -2
+            template = self._template_repository.get_by_site_guid(guid)
+            if template:
+                self._template_repository.delete(template.guid)
 
-            # delete_template = self._template_repository.delete(guid)
             delete_site = self._site_repository.delete(guid)
 
             if not delete_site:

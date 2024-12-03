@@ -26,9 +26,9 @@ class TemplateService:
                 guid=str(uuid4()),
                 site_guid=request.site_guid,
                 container=request.container,
+                container_tag=request.container_tag,
                 is_class=request.is_class,
                 is_id=request.is_id,
-                is_tag=request.is_tag,
                 tag_data=request.tag_data
             )
             result = self._template_repository.create(new_template)
@@ -47,9 +47,9 @@ class TemplateService:
                 guid=request.guid,
                 site_guid=template.site_guid,
                 container=request.container,
+                container_tag=request.container_tag,
                 is_class=request.is_class,
                 is_id=request.is_id,
-                is_tag=request.is_tag,
                 tag_data=request.tag_data
             )
             result = self._template_repository.update(new_template)

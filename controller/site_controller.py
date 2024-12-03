@@ -12,14 +12,20 @@ class SiteController:
         self._site_service = SiteService(db)
         self._auth_middleware = AuthMiddleware()
 
-        app.add_url_rule('/site/create-url/<string:guid>', "create_url", self._auth_middleware.token_required(self.create_url),
+        app.add_url_rule('/site/create-url/<string:guid>', "create_url",
+                         self._auth_middleware.token_required(self.create_url),
                          methods=['GET'])
+        app.add_url_rule('/site/active', "get_active_sites",
+                         self._auth_middleware.token_required(self.get_active_sites), methods=['GET'])
+        app.add_url_rule('/site/filter', "get_admin_sites",
+                         self._auth_middleware.token_required(self.get_admin_sites), methods=['GET'])
         app.add_url_rule("/site", "get_sites", self._auth_middleware.token_required(self.get_sites), methods=['GET'])
         app.add_url_rule("/site", "create_site", self._auth_middleware.token_required(self.create_site),
                          methods=['POST'])
         app.add_url_rule("/site", "update_site", self._auth_middleware.token_required(self.update_site),
                          methods=['PUT'])
-        app.add_url_rule("/site/active-status", "update_active_site", self._auth_middleware.token_required(self.update_active_site),
+        app.add_url_rule("/site/active-status", "update_active_site",
+                         self._auth_middleware.token_required(self.update_active_site),
                          methods=['PUT'])
         app.add_url_rule("/site/<string:guid>", "delete_site", self._auth_middleware.token_required(self.delete_site),
                          methods=['DELETE'])
@@ -123,6 +129,66 @@ class SiteController:
                 'message': f'Error occurred: {str(e)}'
             }), 500
 
+    def get_admin_sites(self):
+        """
+            Get active sites
+            ---
+            tags: ['Site']
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            response = self._site_service.get_sites()
+
+            return jsonify({
+                'status': 200,
+                'message': 'Site get successfully',
+                'data': response
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_active_sites(self):
+        """
+            Get active sites
+            ---
+            tags: ['Site']
+            parameters:
+              - name: search
+                in: path
+                required: true
+                type: string
+                description: GUID of the data to retrieve
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            search = request.args.get('search', "")
+
+            response = self._site_service.get_active_site(search)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Site get successfully',
+                'data': response
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
     def create_site(self):
         """
             Create a new Site
@@ -148,6 +214,9 @@ class SiteController:
                       type: string
                       description: Space rule
                       nullable: True
+                    limit_data:
+                      type: integer
+                      description: Limit data
                     url_pattern:
                       type: array
                       description: List of URL Pattern
@@ -259,6 +328,9 @@ class SiteController:
                       type: string
                       description: Space rule
                       nullable: True
+                    limit_data:
+                      type: integer
+                      description: Limit data
                     url_pattern:
                       type: array
                       description: List of URL Pattern

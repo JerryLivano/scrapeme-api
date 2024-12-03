@@ -17,7 +17,7 @@ class TemplateController:
                          methods=['POST'])
         app.add_url_rule("/template", "update_template", self._auth_middleware.token_required(self.update_template),
                          methods=['PUT'])
-        app.add_url_rule("/template", "delete_template", self._auth_middleware.token_required(self.delete_template),
+        app.add_url_rule("/template/<string:guid>", "delete_template", self._auth_middleware.token_required(self.delete_template),
                          methods=['DELETE'])
 
     def get_template(self, site_guid: str):
@@ -26,7 +26,7 @@ class TemplateController:
         ---
         tags: ['Template']
         parameters:
-          - name: guid
+          - name: site_guid
             in: path
             required: true
             type: string
@@ -42,17 +42,17 @@ class TemplateController:
         try:
             template = self._template_service.get_by_site_guid(site_guid)
 
-            if template:
+            if not template:
+                return jsonify({
+                    'status': 404,
+                    'message': 'Template not found'
+                }), 404
+            else:
                 return jsonify({
                     'status': 200,
                     'message': 'Template retrieved successfully',
                     'data': template.__dict__
                 }), 200
-            else:
-                return jsonify({
-                    'status': 404,
-                    'message': 'Template not found'
-                }), 404
 
         except Exception as e:
             return jsonify({
@@ -78,13 +78,13 @@ class TemplateController:
                     container:
                       type: string
                       description: Container
+                    container_tag:
+                      type: string
+                      description: Container Tag
                     is_class:
                       type: boolean
                       description: Container type
                     is_id:
-                      type: boolean
-                      description: Container type
-                    is_tag:
                       type: boolean
                       description: Container type
                     tag_data:
@@ -93,28 +93,22 @@ class TemplateController:
                       items:
                         type: object
                         properties:
+                          title:
+                            type: string
+                            description: Title
                           identifier:
                             type: string
+                            nullable: True
                             description: Tag Identifier
-                          is_class:
+                          type:
+                            type: integer
+                            description: Identifier type
+                          tag:
+                            type: string
+                            description: Tag type
+                          is_image:
                             type: boolean
-                            nullable: True
-                            description: Class tag
-                          is_id:
-                            type: boolean
-                            nullable: True
-                            description: Tag id
-                          is_tag:
-                            type: boolean
-                            nullable: True
-                            description: Tag name
-                          image:
-                            type: array
-                            description: Image list
-                            nullable: True
-                            items:
-                              type: string
-                              description: Image source
+                            description: Is image tag
             responses:
                 200:
                     description: Site created successfully
@@ -170,13 +164,13 @@ class TemplateController:
                     container:
                       type: string
                       description: Container
+                    container_tag:
+                      type: string
+                      description: Container Tag
                     is_class:
                       type: boolean
                       description: Container type
                     is_id:
-                      type: boolean
-                      description: Container type
-                    is_tag:
                       type: boolean
                       description: Container type
                     tag_data:
@@ -185,28 +179,22 @@ class TemplateController:
                       items:
                         type: object
                         properties:
+                          title:
+                            type: string
+                            description: Title
                           identifier:
                             type: string
+                            nullable: True
                             description: Tag Identifier
-                          is_class:
+                          type:
+                            type: integer
+                            description: Identifier type
+                          tag:
+                            type: string
+                            description: Tag type
+                          is_image:
                             type: boolean
-                            nullable: True
-                            description: Class tag
-                          is_id:
-                            type: boolean
-                            nullable: True
-                            description: Tag id
-                          is_tag:
-                            type: boolean
-                            nullable: True
-                            description: Tag name
-                          image:
-                            type: array
-                            description: Image list
-                            nullable: True
-                            items:
-                              type: string
-                              description: Image source
+                            description: Is image tag
             responses:
                 200:
                     description: Data updated successfully

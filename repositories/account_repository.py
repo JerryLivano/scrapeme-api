@@ -32,6 +32,15 @@ class AccountRepository(IAccountRepository):
         except PyMongoError:
             return 0
 
+    def get_user_by_account(self, guid: str) -> str | None:
+        try:
+            result = self._collection.find_one({"guid": guid})
+            if not result:
+                return None
+            return result["user_guid"]
+        except PyMongoError:
+            return None
+
     def get_by_guid(self, guid: str) -> Account | None:
         try:
             result = self._collection.find_one({"guid": guid})

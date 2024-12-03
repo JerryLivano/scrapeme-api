@@ -11,3 +11,5 @@ pymongo~=4.10.1
 mongoengine~=0.29.1
 Flask-Cors~=5.0.0
 lxml~=5.3.0
+openpyxl~=3.1.5
+XlsxWriter~=3.2.0

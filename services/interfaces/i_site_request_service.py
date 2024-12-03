@@ -9,12 +9,12 @@ from handlers.pagination.response_pagination_handler import ResponsePaginationHa
 class ISiteRequestService(ABC):
     @abstractmethod
     def get_all(self, search: str, page: int, limit: int, order_by: int,
-                column_name: str) -> ResponsePaginationHandler | None:
+                column_name: str, status: int) -> ResponsePaginationHandler | None:
         pass
 
     @abstractmethod
     def get_by_account(self, account: str, search: str, page: int, limit: int, order_by: int,
-                       column_name: str) -> ResponsePaginationHandler | None:
+                       column_name: str, status: int) -> ResponsePaginationHandler | None:
         pass
 
     @abstractmethod

@@ -3,13 +3,14 @@ from datetime import datetime
 
 class Site:
     def __init__(self, guid: str, admin_guid: str, site_name: str, site_url: str,
-                 space_rule: str | None, is_active: bool, url_pattern: list[dict], data_url_pattern: list[dict] | None,
+                 space_rule: str | None, limit_data: int, is_active: bool, url_pattern: list[dict], data_url_pattern: list[dict] | None,
                  created_date: datetime):
         self.guid = guid
         self.admin_guid = admin_guid
         self.site_name = site_name
         self.site_url = site_url
         self.space_rule = space_rule
+        self.limit_data = limit_data
         self.is_active = is_active
         self.url_pattern = url_pattern
         self.data_url_pattern = data_url_pattern
@@ -22,6 +23,7 @@ class Site:
             'site_name': self.site_name,
             'site_url': self.site_url,
             'space_rule': self.space_rule,
+            'limit_data': self.limit_data,
             'is_active': self.is_active,
             'url_pattern': self.url_pattern,
             'data_url_pattern': self.data_url_pattern,
