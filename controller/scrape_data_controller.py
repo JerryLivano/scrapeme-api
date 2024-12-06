@@ -17,6 +17,12 @@ class ScrapeDataController:
                          methods=["GET"])
         app.add_url_rule("/scrape/web-data", "get_web_data", self._auth_middleware.token_required(self.get_web_data),
                          methods=["GET"])
+        app.add_url_rule("/scrape/favorite", "get_fav_scrape",
+                         self._auth_middleware.token_required(self.get_fav_scrape),
+                         methods=["GET"])
+        app.add_url_rule("/scrape/favorite-web-data", "get_fav_web_data",
+                         self._auth_middleware.token_required(self.get_fav_web_data),
+                         methods=["GET"])
         app.add_url_rule("/scrape/update-favorite", "update_web_data_fav",
                          self._auth_middleware.token_required(self.update_web_data_fav), methods=["PUT"])
         app.add_url_rule("/scrape/update-note", "update_web_data_note",
@@ -127,6 +133,122 @@ class ScrapeDataController:
             search = request.args.get('search', '')
 
             response = self._scrape_service.get_all_web_data(guid, search, page, limit)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Web Data get successfully',
+                'data': response.data,
+                'pagination': vars(response.pagination)
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_fav_scrape(self):
+        """
+            Get All Fav Data
+            ---
+            tags: ['Scrape Data']
+            parameters:
+              - name: search
+                in: query
+                type: string
+                description: Search query
+              - name: page
+                in: query
+                type: integer
+                description: Page query
+              - name: limit
+                in: query
+                type: integer
+                description: Limit query
+              - name: order_by
+                in: query
+                type: integer
+                description: Order by query
+              - name: column_name
+                in: query
+                type: string
+                description: Column name query
+              - name: account_guid
+                in: query
+                type: string
+                required: True
+                description: Account GUID
+              - name: site_guid
+                in: query
+                type: string
+                description: Site GUID
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            search = request.args.get('search', "")
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 10))
+            order_by = request.args.get('order_by', 0)
+            column_name = request.args.get('column_name', None)
+            account_guid = request.args.get('account_guid')
+            site_guid = request.args.get('site_guid', '')
+
+            response = self._scrape_service.get_fav_scrape_data(account_guid, search, page, limit, order_by,
+                                                                column_name,
+                                                                site_guid)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Scrape History get successfully',
+                'data': response.data,
+                'pagination': vars(response.pagination)
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_fav_web_data(self):
+        """
+            Get All Fav Web Data
+            ---
+            tags: ['Scrape Data']
+            parameters:
+              - name: guid
+                in: query
+                type: string
+                description: Scrape Guid
+              - name: page
+                in: query
+                type: integer
+                description: Page query
+              - name: limit
+                in: query
+                type: integer
+                description: Limit query
+              - name: search
+                in: query
+                type: string
+                description: Search query
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            guid = request.args.get('guid')
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 10))
+            search = request.args.get('search', '')
+
+            response = self._scrape_service.get_all_fav_web_data(guid, search, page, limit)
 
             return jsonify({
                 'status': 200,

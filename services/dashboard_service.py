@@ -1,5 +1,6 @@
 from pymongo.errors import PyMongoError
 from dto.dashboard.count_dto import CountDto
+from dto.dashboard.scrape_statistic_response_dto import ScrapeStatisticResponseDto
 from dto.dashboard.top_scraper_response_dto import TopScraperResponseDto
 from entities.user import User
 from repositories.account_repository import AccountRepository
@@ -50,5 +51,26 @@ class DashboardService:
                 count=data.count
             ) for data in result]
             return result
+        except PyMongoError:
+            return None
+
+    def get_site_name(self, site_guid: str) -> str | None:
+        try:
+            site = self._site_repository.get_by_guid(site_guid)
+            if not site:
+                return None
+            return site.site_name
+        except PyMongoError:
+            return None
+
+    def get_scrape_statistic(self, year: int) -> list[ScrapeStatisticResponseDto] | None:
+        try:
+            result = self._scrape_repository.get_scrape_statistic(year)
+            if not result:
+                return None
+            return [ScrapeStatisticResponseDto(
+                site_name=self.get_site_name(data.site_guid),
+                months=data.months
+            ) for data in result]
         except PyMongoError:
             return None

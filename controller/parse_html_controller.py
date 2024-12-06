@@ -216,6 +216,8 @@ class ParseHTMLController:
                     description: Successfully created
                 400:
                     description: Failed to create
+                404:
+                    description: template not found
                 500:
                     description: Internal server error
         """
@@ -235,6 +237,16 @@ class ParseHTMLController:
                     'status': 500,
                     'message': 'Failed to create URL'
                 }), 500
+            if response == -1:
+                return jsonify({
+                    'status': 404,
+                    'message': 'Template not found',
+                }), 404
+            if response == 0:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Failed to create data',
+                }), 400
 
             return jsonify({
                 'status': 200,

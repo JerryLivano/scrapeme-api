@@ -1,5 +1,7 @@
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
+
+from dto.dashboard.scrape_statistic_dto import ScrapeStatisticDto
 from dto.dashboard.top_scraper_dto import TopScraperDto
 from dto.scrape_data.update_fav_dto import UpdateFavDto
 from dto.scrape_data.update_name_dto import UpdateNameDto
@@ -33,6 +35,80 @@ class ScrapeDataRepository(IScrapeDataRepository):
                 data["count"]
             ) for data in self._collection.aggregate(pipeline)]
             return result
+        except PyMongoError:
+            return None
+
+    def get_scrape_statistic(self, year: int) -> list[ScrapeStatisticDto] | None:
+        try:
+            months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+            pipeline = [
+                {
+                    "$match": {
+                        "$expr": {
+                            "$eq": [{"$year": "$created_date"}, year]
+                        }
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": {
+                            "site_guid": "$site_guid",
+                            "month": {"$month": "$created_date"}
+                        },
+                        "count": {"$sum": 1}
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": "$_id.site_guid",
+                        "months": {
+                            "$push": {
+                                "month": "$_id.month",
+                                "count": "$count"
+                            }
+                        }
+                    }
+                },
+                {
+                    "$addFields": {
+                        "months": {
+                            "$arrayToObject": {
+                                "$concatArrays": [
+                                    {
+                                        "$map": {
+                                            "input": [{"month": i + 1, "count": 0} for i in range(12)],
+                                            "as": "default",
+                                            "in": {
+                                                "k": {"$arrayElemAt": [months, {"$subtract": ["$$default.month", 1]}]},
+                                                "v": "$$default.count"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "$map": {
+                                            "input": "$months",
+                                            "as": "item",
+                                            "in": {
+                                                "k": {"$arrayElemAt": [months, {"$subtract": ["$$item.month", 1]}]},
+                                                "v": "$$item.count"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "$sort": {"_id": 1}
+                }
+            ]
+            result = self._collection.aggregate(pipeline)
+            return [ScrapeStatisticDto(
+                site_guid=data["_id"],
+                months=data["months"]
+            ) for data in result]
+
         except PyMongoError:
             return None
 
@@ -83,10 +159,18 @@ class ScrapeDataRepository(IScrapeDataRepository):
 
     def update_favourite(self, request: UpdateFavDto) -> bool:
         try:
-            result = self._collection.update_one(
-                {"guid": request.guid},
-                {"$set": {f"web_data.{request.index}.is_favourite": request.is_favourite}}
-            )
+            if request.is_favourite:
+                result = self._collection.update_one(
+                    {"guid": request.guid},
+                    {"$set": {f"web_data.{request.index}.is_favourite": request.is_favourite},
+                     "$inc": {"favourite_count": 1}}
+                )
+            else:
+                result = self._collection.update_one(
+                    {"guid": request.guid},
+                    {"$set": {f"web_data.{request.index}.is_favourite": request.is_favourite},
+                     "$inc": {"favourite_count": -1}}
+                )
             if not result:
                 return False
             return True

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from pymongo.database import Database
 from middleware.auth_middleware import AuthMiddleware
 from services.dashboard_service import DashboardService
@@ -14,6 +14,7 @@ class DashboardController:
         app.add_url_rule("/dashboard/top-scraper", "get_top_scraper",
                          self._auth_middleware.token_required(self.get_top_scraper),
                          methods=["GET"])
+        app.add_url_rule("/dashboard/statistic", "get_scrape_statistic", self.get_scrape_statistic, methods=["GET"])
 
     def get_count(self):
         """
@@ -57,7 +58,53 @@ class DashboardController:
                 'status': 200,
                 'message': 'Data get successfully',
                 'data': [data.__dict__ for data in response]
-            })
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_scrape_statistic(self):
+        """
+        Get Scrape Statistic
+        ---
+        tags: ['Dashboard']
+        parameters:
+          - name: year
+            in: query
+            required: true
+            type: integer
+            description: Year Params
+        responses:
+            200:
+                description: Data retrieved successfully
+            404:
+                description: Not found
+            500:
+                description: Internal server error
+        """
+        try:
+            year = int(request.args.get('year'))
+            if not year:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Year parameter is required'
+                }), 400
+
+            result = self._dashboard_service.get_scrape_statistic(year)
+            if not result:
+                return jsonify({
+                    'status': 404,
+                    'message': 'Data not found'
+                }), 404
+
+            return jsonify({
+                'status': 200,
+                'message': "Data get successfully",
+                'data': [data.__dict__ for data in result]
+            }), 200
 
         except Exception as e:
             return jsonify({

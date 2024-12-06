@@ -98,10 +98,10 @@ class ScrapeDataService:
         except PyMongoError:
             return None
 
-    def get_fav_scrape_data(self, account: str, search: str, page: int, limit: int, order_by: int,
-                            column_name: str, site: str | None) -> ResponsePaginationHandler | None:
+    def get_fav_scrape_data(self, account_guid: str, search: str, page: int, limit: int, order_by: int,
+                            column_name: str, site_guid: str | None) -> ResponsePaginationHandler | None:
         try:
-            result = self._scrape_data_repository.get_by_account(account)
+            result = self._scrape_data_repository.get_by_account(account_guid)
 
             result = list(filter(lambda x: x.favourite_count > 0, result))
 
@@ -114,11 +114,24 @@ class ScrapeDataService:
                 elif int(order_by) == 2:
                     result.sort(key=lambda x: getattr(x, column_name), reverse=True)
 
-            if site:
-                result = list(filter(lambda x: str(x.site_guid) == site, result))
+            if site_guid:
+                result = list(filter(lambda x: str(x.site_guid) == site_guid, result))
 
             if int(order_by) == 0:
                 result.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
+
+            result = [GetScrapeDto(
+                guid=data.guid,
+                account_guid=data.account_guid,
+                site_guid=data.site_guid,
+                site_name=self._site_repository.get_by_guid(data.site_guid).site_name,
+                scrape_name=data.scrape_name,
+                data_count=data.data_count,
+                favourite_count=data.favourite_count,
+                web_data=data.web_data,
+                scrape_time=data.scrape_time,
+                created_date=data.created_date
+            ) for data in result]
 
             return PaginationHandler.paginate(
                 queryable=result,
@@ -129,15 +142,19 @@ class ScrapeDataService:
         except PyMongoError:
             return None
 
-    def get_all_fav_web_data(self, guid: str, page: int, limit: int) -> PaginationHandler | None:
+    def get_all_fav_web_data(self, guid: str, search: str, page: int, limit: int) -> ResponsePaginationHandler | None:
         try:
             result = self._scrape_data_repository.get_by_guid(guid).web_data
 
             result = list(filter(lambda x: x["is_favourite"] == True, result))
 
+            if search:
+                result = [web_data for web_data in result if
+                          any(search.lower() in str(value).lower() for value in web_data.values())]
+
             return PaginationHandler.paginate(
                 queryable=result,
-                transform_function=lambda web_data, index: web_data.__dict__,
+                transform_function=lambda web_data, index: web_data,
                 page=page,
                 limit=limit
             )
