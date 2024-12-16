@@ -29,3 +29,7 @@ class ISiteRequestRepository(ABC):
     @abstractmethod
     def delete(self, guid: str) -> bool:
         pass
+
+    @abstractmethod
+    def delete_many(self, account_guid: str) -> bool:
+        pass

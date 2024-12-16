@@ -14,6 +14,7 @@ from handlers.pagination.pagination_handler import PaginationHandler
 from handlers.pagination.response_pagination_handler import ResponsePaginationHandler
 from repositories.account_repository import AccountRepository
 from repositories.role_repository import RoleRepository
+from repositories.site_request_repository import SiteRequestRepository
 from repositories.user_repository import UserRepository
 from services.interfaces.i_account_service import IAccountService
 
@@ -23,6 +24,7 @@ class AccountService(IAccountService):
         self._account_repository = AccountRepository(db)
         self._user_repository = UserRepository(db)
         self._role_repository = RoleRepository(db)
+        self._request_repository = SiteRequestRepository(db)
         self._bcrypt = BCryptHandler()
 
     def get_all(self, search: str, page: int, limit: int, active_status: int | None, role_name: str | None,
@@ -139,8 +141,9 @@ class AccountService(IAccountService):
 
             delete_user = self._user_repository.delete(account.user_guid)
             delete_account = self._account_repository.delete(guid)
+            delete_request = self._request_repository.delete_many(guid)
 
-            if not delete_user or not delete_account:
+            if not delete_user or not delete_account or not delete_request:
                 return 0
 
             return 1

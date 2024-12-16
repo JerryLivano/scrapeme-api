@@ -26,7 +26,7 @@ class SiteRequestRepository(ISiteRequestRepository):
 
     def get_count(self) -> int:
         try:
-            return self._collection.count_documents({"status": None})
+            return self._collection.count_documents({"status": 0})
         except PyMongoError:
             return 0
 
@@ -85,6 +85,15 @@ class SiteRequestRepository(ISiteRequestRepository):
     def delete(self, guid: str) -> bool:
         try:
             result = self._collection.delete_one({"guid": guid})
+            if not result:
+                return False
+            return result.deleted_count > 0
+        except PyMongoError:
+            return False
+
+    def delete_many(self, account_guid: str) -> bool:
+        try:
+            result = self._collection.delete_many({"account_guid": account_guid})
             if not result:
                 return False
             return result.deleted_count > 0

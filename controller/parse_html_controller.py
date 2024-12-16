@@ -170,6 +170,15 @@ class ParseHTMLController:
                     site_guid:
                       type: string
                       description: Site GUID
+                    account_guid:
+                      type: string
+                      description: Account GUID
+                    limit_data:
+                      type: integer
+                      description: Limit Data
+                    scrape_name:
+                      type: string
+                      description: Scrape Name
                     site_url:
                       type: string
                       description: Site URL
@@ -232,11 +241,6 @@ class ParseHTMLController:
             request_dto = ScrapeDataDto(**data)
             response = self._parse_service.scrape_data(request_dto)
 
-            if not response:
-                return jsonify({
-                    'status': 500,
-                    'message': 'Failed to create URL'
-                }), 500
             if response == -1:
                 return jsonify({
                     'status': 404,
@@ -251,7 +255,7 @@ class ParseHTMLController:
             return jsonify({
                 'status': 200,
                 'message': 'Data created successfully',
-                'data': response
+                'data': response.__dict__
             }), 200
 
         except Exception as e:

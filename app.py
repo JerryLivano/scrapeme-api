@@ -13,8 +13,8 @@ from middleware.cors_middleware import CorsMiddleware
 
 SWAGGER_TEMPLATE = {
     "info": {
-        "title": "API Documentation",
-        "description": "API documentation with Bearer Token authentication",
+        "title": "Scrape-ME API Documentation",
+        "description": "List of all API used in Scrape-ME system",
         "version": "1.0.0"
     },
     "securityDefinitions": {

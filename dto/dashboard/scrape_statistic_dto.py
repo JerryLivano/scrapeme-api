@@ -1,4 +1,4 @@
 class ScrapeStatisticDto:
-    def __init__(self, site_guid: str, months: dict):
+    def __init__(self, site_guid: str, count: int):
         self.site_guid = site_guid
-        self.months = months
+        self.count = count

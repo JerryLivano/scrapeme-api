@@ -5,9 +5,10 @@ from dto.template.template_request_dto import TemplateRequestDto
 from dto.template.template_update_request_dto import TemplateUpdateRequestDto
 from entities.template import Template
 from repositories.template_repository import TemplateRepository
+from services.interfaces.i_template_service import ITemplateService
 
 
-class TemplateService:
+class TemplateService(ITemplateService):
     def __init__(self, db: Database):
         self._template_repository = TemplateRepository(db)
 

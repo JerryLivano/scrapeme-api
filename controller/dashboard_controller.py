@@ -14,7 +14,8 @@ class DashboardController:
         app.add_url_rule("/dashboard/top-scraper", "get_top_scraper",
                          self._auth_middleware.token_required(self.get_top_scraper),
                          methods=["GET"])
-        app.add_url_rule("/dashboard/statistic", "get_scrape_statistic", self.get_scrape_statistic, methods=["GET"])
+        app.add_url_rule("/dashboard/statistic", "get_scrape_statistic",
+                         self._auth_middleware.token_required(self.get_scrape_statistic), methods=["GET"])
 
     def get_count(self):
         """
@@ -71,12 +72,6 @@ class DashboardController:
         Get Scrape Statistic
         ---
         tags: ['Dashboard']
-        parameters:
-          - name: year
-            in: query
-            required: true
-            type: integer
-            description: Year Params
         responses:
             200:
                 description: Data retrieved successfully
@@ -86,14 +81,7 @@ class DashboardController:
                 description: Internal server error
         """
         try:
-            year = int(request.args.get('year'))
-            if not year:
-                return jsonify({
-                    'status': 400,
-                    'message': 'Year parameter is required'
-                }), 400
-
-            result = self._dashboard_service.get_scrape_statistic(year)
+            result = self._dashboard_service.get_scrape_statistic()
             if not result:
                 return jsonify({
                     'status': 404,

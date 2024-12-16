@@ -120,6 +120,14 @@ class ScrapeDataController:
                 in: query
                 type: string
                 description: Search query
+              - name: order_by
+                in: query
+                type: integer
+                description: Order by query
+              - name: column_name
+                in: query
+                type: string
+                description: Column name query
             responses:
                 200:
                     description: List of all data
@@ -131,8 +139,10 @@ class ScrapeDataController:
             page = int(request.args.get('page', 1))
             limit = int(request.args.get('limit', 10))
             search = request.args.get('search', '')
+            order_by = request.args.get('order_by', 0)
+            column_name = request.args.get('column_name', None)
 
-            response = self._scrape_service.get_all_web_data(guid, search, page, limit)
+            response = self._scrape_service.get_all_web_data(guid, search, page, limit, order_by, column_name)
 
             return jsonify({
                 'status': 200,
@@ -236,6 +246,14 @@ class ScrapeDataController:
                 in: query
                 type: string
                 description: Search query
+              - name: order_by
+                in: query
+                type: integer
+                description: Order by query
+              - name: column_name
+                in: query
+                type: string
+                description: Column name query
             responses:
                 200:
                     description: List of all data
@@ -247,8 +265,10 @@ class ScrapeDataController:
             page = int(request.args.get('page', 1))
             limit = int(request.args.get('limit', 10))
             search = request.args.get('search', '')
+            order_by = request.args.get('order_by', 0)
+            column_name = request.args.get('column_name', None)
 
-            response = self._scrape_service.get_all_fav_web_data(guid, search, page, limit)
+            response = self._scrape_service.get_all_fav_web_data(guid, search, page, limit, order_by, column_name)
 
             return jsonify({
                 'status': 200,

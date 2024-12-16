@@ -12,9 +12,10 @@ from handlers.pagination.pagination_handler import PaginationHandler
 from handlers.pagination.response_pagination_handler import ResponsePaginationHandler
 from repositories.scrape_data_repository import ScrapeDataRepository
 from repositories.site_repository import SiteRepository
+from services.interfaces.i_scrape_data_service import IScrapeDataService
 
 
-class ScrapeDataService:
+class ScrapeDataService(IScrapeDataService):
     def __init__(self, db: Database):
         self._scrape_data_repository = ScrapeDataRepository(db)
         self._site_repository = SiteRepository(db)
@@ -81,13 +82,20 @@ class ScrapeDataService:
         except PyMongoError:
             return None
 
-    def get_all_web_data(self, guid: str, search: str, page: int, limit: int) -> ResponsePaginationHandler | None:
+    def get_all_web_data(self, guid: str, search: str, page: int, limit: int, order_by: int,
+                         column_name: str) -> ResponsePaginationHandler | None:
         try:
             result = self._scrape_data_repository.get_by_guid(guid).web_data
 
             if search:
                 result = [web_data for web_data in result if
                           any(search.lower() in str(value).lower() for value in web_data.values())]
+
+            if column_name:
+                if int(order_by) == 1:
+                    result.sort(key=lambda x: x[column_name])
+                elif int(order_by) == 2:
+                    result.sort(key=lambda x: x[column_name], reverse=True)
 
             return PaginationHandler.paginate(
                 queryable=result,
@@ -142,7 +150,8 @@ class ScrapeDataService:
         except PyMongoError:
             return None
 
-    def get_all_fav_web_data(self, guid: str, search: str, page: int, limit: int) -> ResponsePaginationHandler | None:
+    def get_all_fav_web_data(self, guid: str, search: str, page: int, limit: int, order_by: int,
+                             column_name: str) -> ResponsePaginationHandler | None:
         try:
             result = self._scrape_data_repository.get_by_guid(guid).web_data
 
@@ -151,6 +160,12 @@ class ScrapeDataService:
             if search:
                 result = [web_data for web_data in result if
                           any(search.lower() in str(value).lower() for value in web_data.values())]
+
+            if column_name:
+                if int(order_by) == 1:
+                    result.sort(key=lambda x: x[column_name])
+                elif int(order_by) == 2:
+                    result.sort(key=lambda x: x[column_name], reverse=True)
 
             return PaginationHandler.paginate(
                 queryable=result,

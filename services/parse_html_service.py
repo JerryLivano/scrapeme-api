@@ -7,13 +7,13 @@ from selenium.common import WebDriverException
 from dto.scrape_data.create_site_url_dto import CreateSiteUrlDto
 from dto.scrape_data.scrape_data_dto import ScrapeDataDto
 from dto.scrape_data.scrape_data_request_dto import ScrapeDataRequestDto
+from dto.scrape_data.scrape_result_dto import ScrapeResultDto
 from repositories.template_repository import TemplateRepository
 from services.interfaces.i_parse_html_service import IParseHTMLService
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup, Comment
-
 from services.scrape_data_service import ScrapeDataService
 
 
@@ -60,7 +60,7 @@ class ParseHTMLService(IParseHTMLService):
         except ValueError:
             return None
 
-    def parse_html(self, url) -> BeautifulSoup | None:
+    def get_html_source(self, url) -> BeautifulSoup | None:
         driver = None
         try:
             self.kill_chromedriver()
@@ -75,15 +75,6 @@ class ParseHTMLService(IParseHTMLService):
             for comment in comments:
                 comment.extract()
 
-            # divs = soup.find_all('div')
-            # div_counts = {}
-            #
-            # for div in divs:
-            #     child_divs = div.find_all('div', recursive=False)
-            #     div_counts[div] = len(child_divs)
-            #
-            # result = max(div_counts, key=div_counts.get)
-
             return soup.body
         except WebDriverException as e:
             print(f"WebDriver error: {e}")
@@ -93,7 +84,7 @@ class ParseHTMLService(IParseHTMLService):
                 driver.quit()
             time.sleep(4)
 
-    def scrape_data(self, request: ScrapeDataDto) -> list[dict] | int | None:
+    def scrape_data(self, request: ScrapeDataDto) -> ScrapeResultDto | int | None:
         try:
             start_time = time.time()
             limit_data = request.limit_data
@@ -131,7 +122,7 @@ class ParseHTMLService(IParseHTMLService):
                 print(url)
 
                 # Mengambil sumber HTML tiap URL
-                soup = self.parse_html(url)
+                soup = self.get_html_source(url)
                 if not soup:
                     print(f"Soup '{soup}' not found.")
                     break
@@ -182,6 +173,15 @@ class ParseHTMLService(IParseHTMLService):
                 for idx, tag in enumerate(template.tag_data):
                     # Ambil element dari temp_result
                     element = temp_result[idx][i] if i < len(temp_result[idx]) else None
+                    if ',' in tag['title']:
+                        list_title = [title.strip() for title in tag["title"].split(",")]
+                        for title in list_title:
+                            field_key = title.lower().replace(" ", "_")
+                            item_data[field_key] = "-"
+                    else:
+                        field_key = tag['title'].lower().replace(" ", "_")
+                        item_data[field_key] = "-"
+
                     if element:
                         if tag.get("is_container", False):
                             # Ambil data dari list tag
@@ -192,36 +192,36 @@ class ParseHTMLService(IParseHTMLService):
                                                                 attrs={tag['child_type']: tag['child_identifier']})
 
                             if tag["child_tag"].lower() == "img":
-                                item_data[tag['title'].lower().replace(" ", "_")] = [elem.get('src', None) for elem in
-                                                                                     list_element]
+                                item_data[field_key] = [elem.get('src', "-") for elem in
+                                                        list_element]
                             elif tag["child_tag"].lower() == "a":
-                                hrefs = [elem.get('href', None) for elem in list_element]
+                                hrefs = [elem.get('href', "-") for elem in list_element]
                                 for href in hrefs:
                                     if request.site_url[12:] not in href:
-                                        item_data[tag['title'].lower().replace(" ", "_")] = f"{request.site_url}{href}"
+                                        item_data[field_key] = f"{request.site_url}{href}"
                                     else:
-                                        item_data[tag['title'].lower().replace(" ", "_")] = href
+                                        item_data[field_key] = href
                             else:
                                 list_title = [title.strip() for title in tag["title"].split(",")]
                                 for j, elem in enumerate(list_element):
                                     if j < len(list_title):
                                         item_data[list_title[j].lower().replace(" ", "_")] = elem.get_text(strip=True,
-                                                                                                           separator=" ").strip() if elem else None
-                        # Ambil data dari tag
+                                                                                                           separator=" ").strip() or "-"
                         else:
+                            # Ambil data dari tag
                             if tag["tag"].lower() == "img":
-                                item_data[tag['title'].lower().replace(" ", "_")] = element.get('src', None)
+                                item_data[field_key] = element.get('src', "-")
                             elif tag["tag"].lower() == "a":
-                                href = element.get('href', None)
+                                href = element.get('href', "-")
                                 if request.site_url[12:] not in href:
-                                    item_data[tag['title'].lower().replace(" ", "_")] = f"{request.site_url}{href}"
+                                    item_data[field_key] = f"{request.site_url}{href}"
                                 else:
-                                    item_data[tag['title'].lower().replace(" ", "_")] = href
+                                    item_data[field_key] = href
                             else:
-                                item_data[tag['title'].lower().replace(" ", "_")] = element.get_text(strip=True,
-                                                                                                     separator=" ").strip()
+                                item_data[field_key] = element.get_text(strip=True,
+                                                                        separator=" ").strip() or "-"
                     else:
-                        item_data[tag['title'].lower().replace(" ", "_")] = None
+                        item_data[field_key] = "-"
                 scraped_data.append(item_data)
 
             end_time = time.time()
@@ -244,7 +244,20 @@ class ParseHTMLService(IParseHTMLService):
             # Return hasil
             if not result:
                 return 0
-            return result.to_dict()
+            elif result.data_count < limit_data:
+                return ScrapeResultDto(
+                    response=0,
+                    scrape_guid=result.guid,
+                    scrape_name=result.scrape_name,
+                    created_date=result.created_date
+                )
+            else:
+                return ScrapeResultDto(
+                    response=1,
+                    scrape_guid=result.guid,
+                    scrape_name=result.scrape_name,
+                    created_date=result.created_date
+                )
 
         except Exception as e:
             print(f"Error during scraping: {e}")

@@ -8,9 +8,10 @@ from repositories.scrape_data_repository import ScrapeDataRepository
 from repositories.site_repository import SiteRepository
 from repositories.site_request_repository import SiteRequestRepository
 from repositories.user_repository import UserRepository
+from services.interfaces.i_dashboard_service import IDashboardService
 
 
-class DashboardService:
+class DashboardService(IDashboardService):
     def __init__(self, db):
         self._account_repository = AccountRepository(db)
         self._user_repository = UserRepository(db)
@@ -63,14 +64,14 @@ class DashboardService:
         except PyMongoError:
             return None
 
-    def get_scrape_statistic(self, year: int) -> list[ScrapeStatisticResponseDto] | None:
+    def get_scrape_statistic(self) -> list[ScrapeStatisticResponseDto] | None:
         try:
-            result = self._scrape_repository.get_scrape_statistic(year)
+            result = self._scrape_repository.get_scrape_statistic()
             if not result:
                 return None
             return [ScrapeStatisticResponseDto(
                 site_name=self.get_site_name(data.site_guid),
-                months=data.months
+                count=data.count
             ) for data in result]
         except PyMongoError:
             return None
