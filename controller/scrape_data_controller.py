@@ -23,6 +23,14 @@ class ScrapeDataController:
         app.add_url_rule("/scrape/favorite-web-data", "get_fav_web_data",
                          self._auth_middleware.token_required(self.get_fav_web_data),
                          methods=["GET"])
+        app.add_url_rule("/scrape/data-analysis", "get_data_analysis",
+                         self._auth_middleware.token_required(self.get_data_analysis), methods=["GET"])
+        app.add_url_rule("/scrape/room-comparison", "get_room_comparison",
+                         self._auth_middleware.token_required(self.get_room_comparison), methods=["GET"])
+        app.add_url_rule("/scrape/webdata-analysis", "get_web-data_analysis",
+                         self._auth_middleware.token_required(self.get_web_data_analysis), methods=["GET"])
+        app.add_url_rule("/scrape/location-comparison", "get_location_comparison",
+                         self._auth_middleware.token_required(self.get_location_comparison), methods=["GET"])
         app.add_url_rule("/scrape/update-favorite", "update_web_data_fav",
                          self._auth_middleware.token_required(self.update_web_data_fav), methods=["PUT"])
         app.add_url_rule("/scrape/update-note", "update_web_data_note",
@@ -90,6 +98,196 @@ class ScrapeDataController:
                 'message': 'Scrape History get successfully',
                 'data': response.data,
                 'pagination': vars(response.pagination)
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_data_analysis(self):
+        """
+            Get Data Analysis
+            ---
+            tags: ['Scrape Data']
+            parameters:
+              - name: account_guid
+                in: query
+                type: string
+                required: True
+                description: Account GUID
+              - name: site_guid
+                in: query
+                type: string
+                description: Site Guid
+              - name: location
+                in: query
+                type: string
+                description: Location Search
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            account_guid = request.args.get("account_guid")
+            site_guid = request.args.get("site_guid", "")
+            location = request.args.get("location", "")
+
+            response = self._scrape_service.get_data_analysis(account_guid, location, site_guid)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Data get successfully',
+                'data': response.__dict__
+            }), 200
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_room_comparison(self):
+        """
+            Get Room Comparison
+            ---
+            tags: ['Scrape Data']
+            parameters:
+              - name: account_guid
+                in: query
+                type: string
+                required: True
+                description: Account GUID
+              - name: site_guid
+                in: query
+                type: string
+                description: Site Guid
+              - name: location
+                in: query
+                type: string
+                description: Location Search
+              - name: room
+                in: query
+                type: string
+                description: Room type
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            account_guid = request.args.get("account_guid")
+            site_guid = request.args.get("site_guid", "")
+            location = request.args.get("location", "")
+            room = request.args.get("room", "")
+
+            response = self._scrape_service.get_comparison(account_guid, location, site_guid, room)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Data get successfully',
+                'data': response.__dict__
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_web_data_analysis(self):
+        """
+            Get Web Data Analysis
+            ---
+            tags: ['Scrape Data']
+            parameters:
+              - name: account_guid
+                in: query
+                type: string
+                required: True
+                description: Account GUID
+              - name: site_guid
+                in: query
+                type: string
+                description: Site Guid
+              - name: location
+                in: query
+                type: string
+                description: Location Search
+              - name: order_by
+                in: query
+                type: string
+                description: Order by
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            account_guid = request.args.get("account_guid")
+            site_guid = request.args.get("site_guid", "")
+            location = request.args.get("location", "")
+            order_by = request.args.get("order_by", "")
+
+            response = self._scrape_service.get_web_data_analysis(account_guid, location, site_guid, order_by)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Data get successfully',
+                'data': response.__dict__
+            }), 200
+
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
+
+    def get_location_comparison(self):
+        """
+            Get Location Comparison
+            ---
+            tags: ['Scrape Data']
+            parameters:
+              - name: account_guid
+                in: query
+                type: string
+                required: True
+                description: Account GUID
+              - name: site_guid
+                in: query
+                type: string
+                description: Site Guid
+              - name: location_data
+                in: query
+                type: array
+                description: List of Location
+                items:
+                  type: string
+                collectionFormat: multi
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            account_guid = request.args.get("account_guid")
+            site_guid = request.args.get("site_guid", "")
+            location_data = request.args.getlist("location_data")
+
+            print(location_data)
+
+            response = self._scrape_service.get_location_comparison(account_guid, site_guid, location_data)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Data get successfully',
+                'data': [item.__dict__ for item in response]
             }), 200
 
         except Exception as e:

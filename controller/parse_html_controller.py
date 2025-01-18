@@ -136,7 +136,7 @@ class ParseHTMLController:
                 'message': 'URL parameter is required'
             }), 400
         try:
-            result = self._parse_service.parse_html(data["url"])
+            result = self._parse_service.get_html_source(data["url"])
             if result:
                 return jsonify({
                     'status': 200,

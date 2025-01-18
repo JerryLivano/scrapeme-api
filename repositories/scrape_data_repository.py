@@ -78,6 +78,23 @@ class ScrapeDataRepository(IScrapeDataRepository):
         except PyMongoError:
             return None
 
+    def get_by_site(self, account_guid: str, site: str) -> list[ScrapeData] | None:
+        try:
+            result = self._collection.find({"site_guid": site, "account_guid": account_guid})
+            return [ScrapeData(
+                guid=data['guid'],
+                account_guid=data['account_guid'],
+                site_guid=data['site_guid'],
+                scrape_name=data['scrape_name'],
+                data_count=data['data_count'],
+                favourite_count=data['favourite_count'],
+                web_data=data['web_data'],
+                scrape_time=data['scrape_time'],
+                created_date=data['created_date']
+            ) for data in result]
+        except PyMongoError:
+            return None
+
     def get_by_guid(self, guid: str) -> ScrapeData | None:
         try:
             result = self._collection.find_one({"guid": guid})
