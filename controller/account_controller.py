@@ -66,8 +66,8 @@ class AccountController:
                     description: Internal server error
         """
         try:
-            page = int(request.args.get('page'))
-            limit = int(request.args.get('limit'))
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 10))
             search = request.args.get('search', '')
             is_active = request.args.get('is_active', -1)
             role_name = request.args.get('role_name', None)

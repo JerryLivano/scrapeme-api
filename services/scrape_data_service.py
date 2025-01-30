@@ -1,5 +1,6 @@
 import re
 import copy
+from collections import Counter
 from datetime import datetime, timedelta
 from uuid import uuid4
 from pymongo.database import Database
@@ -25,6 +26,76 @@ class ScrapeDataService(IScrapeDataService):
     def __init__(self, db: Database):
         self._scrape_data_repository = ScrapeDataRepository(db)
         self._site_repository = SiteRepository(db)
+
+    @staticmethod
+    def regex_to_int(text) -> int:
+        match = re.search(r"(\d+[.,]?\d*)", text)
+        if match:
+            return int(match.group(1).replace(',', '.'))
+        else:
+            return -1
+
+    def get_all_list_web_data(self, account_guid: str, search: str, page: int, limit: int, order_by: int,
+                              column_name: str, site_guid: str | None, bedroom: int,
+                              bathroom: int) -> ResponsePaginationHandler | None:
+        try:
+            if site_guid != "":
+                scrape_data = self._scrape_data_repository.get_by_site(account_guid, site_guid)
+            else:
+                scrape_data = self._scrape_data_repository.get_by_account(account_guid)
+
+            if not scrape_data:
+                return None
+
+            result = []
+            for item in scrape_data:
+                result.extend(
+                    {
+                        **{
+                            keyword: web_item.get(
+                                next((key for key in web_item.keys() if keyword in key.lower()), None), "-"
+                            )
+                            for keyword in
+                            ["image", "link", "name", "type", "location", "price", "bedroom", "bathroom", "building",
+                             "surface", "is_fav", "note", "index"]
+                        },
+                        "scrape_guid": item.guid
+                    }
+                    for web_item in item.web_data
+                )
+
+            if int(bedroom) != -1:
+                result = [
+                    web_data for web_data in result
+                    if "bedroom" in web_data and web_data["bedroom"] is not None and
+                       self.regex_to_int(web_data["bedroom"]) == int(bedroom)
+                ]
+
+            if int(bathroom) != -1:
+                result = [
+                    web_data for web_data in result
+                    if "bathroom" in web_data and web_data["bathroom"] is not None and
+                       int(bathroom) == self.regex_to_int(web_data["bathroom"])
+                ]
+
+            if search:
+                result = [web_data for web_data in result if
+                          any(search.lower() in str(value).lower() for value in web_data.values())]
+
+            if column_name:
+                if int(order_by) == 1:
+                    result.sort(key=lambda x: x[column_name])
+                elif int(order_by) == 2:
+                    result.sort(key=lambda x: x[column_name], reverse=True)
+
+            return PaginationHandler.paginate(
+                queryable=result,
+                transform_function=lambda web_data, index: web_data,
+                page=page,
+                limit=limit
+            )
+        except PyMongoError:
+            return None
 
     @staticmethod
     def average(data, key) -> int | None:
@@ -57,7 +128,8 @@ class ScrapeDataService(IScrapeDataService):
                 avg_bedroom=self.average(result, "bedroom"),
                 avg_bathroom=self.average(result, "bathroom"),
                 avg_surface=self.average(result, "surface"),
-                avg_building=self.average(result, "building")
+                avg_building=self.average(result, "building"),
+                data_count=len(result)
             )
         except PyMongoError:
             return None
@@ -105,8 +177,7 @@ class ScrapeDataService(IScrapeDataService):
         except PyMongoError:
             return None
 
-    def get_location_comparison(self, account_guid: str, site_guid: str, location_data: list[str]) -> list[
-                                LocationComparisonDto] | None:
+    def get_location_comparison(self, account_guid: str, site_guid: str) -> list[LocationComparisonDto] | None:
         try:
             if site_guid != "":
                 scrape_data = self._scrape_data_repository.get_by_site(account_guid, site_guid)
@@ -120,30 +191,18 @@ class ScrapeDataService(IScrapeDataService):
             for item in scrape_data:
                 result.extend(item.web_data)
 
-            if len(location_data) == 0:
-                return [LocationComparisonDto(
-                    label="Other",
-                    value=len(result)
-                )]
-            else:
-                selected_count = 0
-                data_count = [0] * len(location_data)
-                for item in result:
-                    location_value = item.get("location", "").lower()
-                    for idx, location in enumerate(location_data):
-                        if location.lower() in location_value:
-                            data_count[idx] += 1
-                            selected_count += 1
-                            break
-                other_count = len(result) - selected_count
-                location_data = [data.capitalize() for data in location_data]
-                location_data.append("Other")
-                data_count.append(other_count)
+            valid_location = [str(item["location"]).split(",")[0].strip().lower()
+                              for item in result if
+                              "location" in item and (item["location"].strip() != "-" or item["location"] != "")]
 
-                return [LocationComparisonDto(
-                    label=item,
-                    value=data_count[idx]
-                ) for idx, item in enumerate(location_data)]
+            if not valid_location:
+                return []
+
+            top_locations = Counter(valid_location).most_common(5)
+            return [LocationComparisonDto(
+                label=location.title(),
+                value=count
+            ) for location, count in top_locations]
         except PyMongoError:
             return None
 

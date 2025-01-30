@@ -64,6 +64,8 @@ class AccountService(IAccountService):
             if int(order_by) == 0:
                 result.sort(key=lambda x: getattr(x, "created_date"), reverse=True)
 
+            result.sort(key=lambda x: getattr(x, "role")["role_name"], reverse=False)
+
             return PaginationHandler.paginate(
                 queryable=result,
                 transform_function=lambda account, index: account.__dict__,

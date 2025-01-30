@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, Response
 from pymongo.database import Database
-
 from dto.scrape_data.update_fav_dto import UpdateFavDto
 from dto.scrape_data.update_name_dto import UpdateNameDto
 from dto.scrape_data.update_note_dto import UpdateNoteDto
@@ -13,6 +12,8 @@ class ScrapeDataController:
         self._auth_middleware = AuthMiddleware()
         self._scrape_service = ScrapeDataService(db)
 
+        app.add_url_rule("/scrape/all-web-data", "get_all_list_web_data",
+                         self._auth_middleware.token_required(self.get_all_list_web_data), methods=["GET"])
         app.add_url_rule("/scrape/account", "get_by_account", self._auth_middleware.token_required(self.get_by_account),
                          methods=["GET"])
         app.add_url_rule("/scrape/web-data", "get_web_data", self._auth_middleware.token_required(self.get_web_data),
@@ -39,6 +40,81 @@ class ScrapeDataController:
                          self._auth_middleware.token_required(self.update_scrape_name), methods=["PUT"])
         app.add_url_rule("/scrape/<string:guid>", "delete_scrape",
                          self._auth_middleware.token_required(self.delete_scrape), methods=["DELETE"])
+
+    def get_all_list_web_data(self):
+        """
+            Get All List Web Data
+            ---
+            tags: ['Scrape Data']
+            parameters:
+              - name: account_guid
+                in: query
+                type: string
+                description: Account Guid
+                required: True
+              - name: site_guid
+                in: query
+                type: string
+                description: Site Guid
+              - name: page
+                in: query
+                type: integer
+                description: Page query
+              - name: limit
+                in: query
+                type: integer
+                description: Limit query
+              - name: search
+                in: query
+                type: string
+                description: Search query
+              - name: order_by
+                in: query
+                type: integer
+                description: Order by query
+              - name: column_name
+                in: query
+                type: string
+                description: Column name query
+              - name: bedroom
+                in: query
+                type: integer
+                description: Bedroom
+              - name: bathroom
+                in: query
+                type: integer
+                description: Bathroom
+            responses:
+                200:
+                    description: List of all data
+                500:
+                    description: Internal server error
+        """
+        try:
+            account_guid = request.args.get('account_guid')
+            site_guid = request.args.get('site_guid', '')
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 10))
+            search = request.args.get('search', '')
+            order_by = request.args.get('order_by', 0)
+            column_name = request.args.get('column_name', None)
+            bedroom = request.args.get('bedroom', -1)
+            bathroom = request.args.get('bathroom', -1)
+
+            response = self._scrape_service.get_all_list_web_data(account_guid, search, page, limit, order_by,
+                                                                  column_name, site_guid, bedroom, bathroom)
+
+            return jsonify({
+                'status': 200,
+                'message': 'Web Data get successfully',
+                'data': response.data,
+                'pagination': vars(response.pagination)
+            }), 200
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Error occurred: {str(e)}'
+            }), 500
 
     def get_by_account(self):
         """
@@ -262,13 +338,6 @@ class ScrapeDataController:
                 in: query
                 type: string
                 description: Site Guid
-              - name: location_data
-                in: query
-                type: array
-                description: List of Location
-                items:
-                  type: string
-                collectionFormat: multi
             responses:
                 200:
                     description: List of all data
@@ -278,11 +347,8 @@ class ScrapeDataController:
         try:
             account_guid = request.args.get("account_guid")
             site_guid = request.args.get("site_guid", "")
-            location_data = request.args.getlist("location_data")
 
-            print(location_data)
-
-            response = self._scrape_service.get_location_comparison(account_guid, site_guid, location_data)
+            response = self._scrape_service.get_location_comparison(account_guid, site_guid)
 
             return jsonify({
                 'status': 200,
