@@ -65,16 +65,12 @@ class ParseHTMLService(IParseHTMLService):
         try:
             self.kill_chromedriver()
             driver = self._initialize_driver()
-
             driver.get(url)
             content = driver.page_source
-
             soup = BeautifulSoup(content, 'html.parser')
-
             comments = soup.find_all(string=lambda text: isinstance(text, Comment))
             for comment in comments:
                 comment.extract()
-
             return soup.body
         except WebDriverException as e:
             print(f"WebDriver error: {e}")
@@ -90,18 +86,13 @@ class ParseHTMLService(IParseHTMLService):
             limit_data = request.limit_data
             page = 1
             collected_data = 0
-
             template = self._template_repository.get_by_site_guid(request.site_guid)
             if not template:
                 return -1
-
             scraped_data = []
-            # List penyimpanan data scraping sementara
-            temp_result = [[] for _ in template.tag_data]
 
-            # Pengulangan untuk membatasi scraping data
+            temp_result = [[] for _ in template.tag_data]
             while collected_data < limit_data:
-                # Membuat URL tiap page
                 current_url_pattern = []
                 for pattern in request.url_pattern:
                     if pattern.get('is_page', False):
@@ -112,33 +103,24 @@ class ParseHTMLService(IParseHTMLService):
                         })
                     else:
                         current_url_pattern.append(pattern)
-
                 url = self.create_site_url(CreateSiteUrlDto(
                     request.site_url,
                     current_url_pattern,
                     request.space_rule
                 ))
-
                 print(url)
-
-                # Mengambil sumber HTML tiap URL
                 soup = self.get_html_source(url)
                 if not soup:
                     print(f"Soup '{soup}' not found.")
                     break
-
-                # Ambil kumpulan tag data berdasarkan container
                 container = []
                 if template.is_class:
                     container = soup.find_all(template.container_tag, class_=template.container)
                 elif template.is_id:
                     container = soup.find_all(template.container_tag, id=template.container)
-
                 if not container:
                     print(f"Container '{template.container}' not found.")
                     break
-
-                # Ambil tag yang ada pada container dari template
                 for item in container:
                     for idx, tag in enumerate(template.tag_data):
                         try:
@@ -152,11 +134,8 @@ class ParseHTMLService(IParseHTMLService):
                         except (AttributeError, KeyError, TypeError):
                             print(f"Error processing tag: {tag}")
                             continue
-
-                # Hasil banyak data
                 collected_data = len(temp_result[0])
                 page += 1
-                print(collected_data)
 
             # Membatasi banyak data berdasarkan limit
             for i in range(len(temp_result)):
@@ -164,14 +143,12 @@ class ParseHTMLService(IParseHTMLService):
 
             num_items = len(temp_result[0])
             for i in range(num_items):
-                # Membuat object data
                 item_data = {
                     "index": i,
                     "is_favourite": False,
                     "note": ""
                 }
                 for idx, tag in enumerate(template.tag_data):
-                    # Ambil element dari temp_result
                     element = temp_result[idx][i] if i < len(temp_result[idx]) else None
                     if ',' in tag['title']:
                         list_title = [title.strip() for title in tag["title"].split(",")]
@@ -181,19 +158,14 @@ class ParseHTMLService(IParseHTMLService):
                     else:
                         field_key = tag['title'].lower().replace(" ", "_")
                         item_data[field_key] = "-"
-
                     if element:
                         if tag.get("is_container", False):
-                            # Ambil data dari list tag
                             if tag["child_type"] == "":
                                 list_element = element.find_all(tag['child_tag'])
                             else:
-                                list_element = element.find_all(tag['child_tag'],
-                                                                attrs={tag['child_type']: tag['child_identifier']})
-
+                                list_element = element.find_all(tag['child_tag'], attrs={tag['child_type']: tag['child_identifier']})
                             if tag["child_tag"].lower() == "img":
-                                item_data[field_key] = [elem.get('src', "-") for elem in
-                                                        list_element]
+                                item_data[field_key] = [elem.get('src', "-") for elem in list_element]
                             elif tag["child_tag"].lower() == "a":
                                 hrefs = [elem.get('href', "-") for elem in list_element]
                                 for href in hrefs:
@@ -205,10 +177,8 @@ class ParseHTMLService(IParseHTMLService):
                                 list_title = [title.strip() for title in tag["title"].split(",")]
                                 for j, elem in enumerate(list_element):
                                     if j < len(list_title):
-                                        item_data[list_title[j].lower().replace(" ", "_")] = elem.get_text(strip=True,
-                                                                                                           separator=" ").strip() or "-"
+                                        item_data[list_title[j].lower().replace(" ", "_")] = elem.get_text(strip=True, separator=" ").strip() or "-"
                         else:
-                            # Ambil data dari tag
                             if tag["tag"].lower() == "img":
                                 item_data[field_key] = element.get('src', "-")
                             elif tag["tag"].lower() == "a":
@@ -218,8 +188,7 @@ class ParseHTMLService(IParseHTMLService):
                                 else:
                                     item_data[field_key] = href
                             else:
-                                item_data[field_key] = element.get_text(strip=True,
-                                                                        separator=" ").strip() or "-"
+                                item_data[field_key] = element.get_text(strip=True, separator=" ").strip() or "-"
                     else:
                         item_data[field_key] = "-"
                 scraped_data.append(item_data)
